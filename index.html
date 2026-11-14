@@ -1,0 +1,1626 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="description" content="DigiZORA – Le numérique sans frontières. Boutiques en ligne avec livraison, immobilier, transport, location de véhicules, emploi et services.">
+<title>DigiZORA – Le numérique sans frontières</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="/icon-192.png"><link rel="apple-touch-icon" href="/icon-192.png">
+
+<!-- ============================================================
+  DigiZORA – Frontend monofichier (HTML + CSS + JS)
+  Entreprise porteuse : Nexus Solutions Group
+  Services externes (API, base de données, paiements, stockage) :
+  voir la section CONFIGURATION du script et le fichier GUIDE-BACKEND.md
+  ============================================================ -->
+
+<style>
+/* ============================ 1. TOKENS ============================ */
+:root{
+  --blue:#0a2f7a; --blue2:#1b55d6; --blue3:#051b4d; --gold:#ff8a00; --gold2:#ffb347;
+  --white:#fff; --bg:#f4f7ff; --ink:#0d1b3d; --muted:#5b6788; --line:#dfe6fb;
+  --ok:#12a150; --warn:#e08a00; --bad:#d33a3a;
+  --r:18px; --shadow:0 10px 30px rgba(10,47,122,.14); --shadow2:0 24px 60px rgba(10,47,122,.28);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;min-height:100vh;display:flex;flex-direction:column}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+img{max-width:100%}
+.wrap{width:min(1180px,100% - 32px);margin-inline:auto}
+.hide{display:none!important}
+.muted{color:var(--muted)}
+.gold{color:var(--gold)}
+
+/* ============================ 2. LAYOUT ============================ */
+header.top{position:sticky;top:0;z-index:50;background:rgba(5,27,77,.94);backdrop-filter:blur(10px);color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.bar{display:flex;align-items:center;gap:14px;padding:10px 0}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:1.25rem;letter-spacing:.2px}
+.logo svg{width:38px;height:38px;flex:none}
+.logo b{color:var(--gold)}
+nav.main{display:flex;gap:2px;margin-left:10px;flex:1;overflow-x:auto;scrollbar-width:none}
+nav.main a{padding:8px 11px;border-radius:10px;font-size:.92rem;white-space:nowrap;opacity:.9}
+nav.main a:hover,nav.main a.on{background:rgba(255,255,255,.14);opacity:1}
+.actions{display:flex;gap:8px;align-items:center}
+.burger{display:none;font-size:1.6rem;color:#fff;padding:4px 10px;line-height:1;flex:none}
+.navact{display:none}
+.bar{min-width:0}
+.logo{min-width:0;white-space:nowrap}
+.searchrow{padding:0 0 12px}
+.search{display:flex;background:#fff;border-radius:14px;overflow:hidden;box-shadow:var(--shadow)}
+.search input{flex:1;border:0;padding:12px 16px;outline:0;color:var(--ink);min-width:0}
+.search button{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--blue3);font-weight:700;padding:0 20px}
+main#view{flex:1;padding-bottom:50px}
+footer.foot{background:var(--blue3);color:#cfd8ff;padding:36px 0 22px;margin-top:30px}
+footer .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:24px}
+footer h4{color:var(--gold);margin-bottom:8px}
+footer a{display:block;padding:3px 0;opacity:.85}
+footer a:hover{opacity:1;color:var(--gold2)}
+.copy{border-top:1px solid rgba(255,255,255,.15);margin-top:22px;padding-top:14px;font-size:.85rem;text-align:center}
+
+/* ============================ 3. COMPOSANTS ============================ */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:12px;font-weight:700;transition:.2s;border:2px solid transparent;font-size:.95rem}
+.btn:hover{transform:translateY(-2px)}
+.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:var(--blue3);box-shadow:0 6px 16px rgba(255,138,0,.4)}
+.btn.blue{background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;box-shadow:0 6px 16px rgba(27,85,214,.35)}
+.btn.line{border-color:currentColor;background:transparent}
+.btn.light{background:#fff;color:var(--blue)}
+.btn.green{background:#25d366;color:#053b1b}
+.btn.red{background:#fdeaea;color:var(--bad)}
+.btn.sm{padding:6px 12px;font-size:.84rem;border-radius:10px}
+.btn[disabled]{opacity:.5;pointer-events:none}
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);padding:18px;border:1px solid var(--line)}
+.grid{display:grid;gap:18px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.g3{grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:.74rem;font-weight:700;background:#e8eeff;color:var(--blue)}
+.badge.gold{background:#fff3cf;color:#8a5e00}
+.badge.ok{background:#dcf5e6;color:var(--ok)}
+.badge.warn{background:#fff0d0;color:var(--warn)}
+.badge.bad{background:#fde3e3;color:var(--bad)}
+h1.t{font-size:clamp(1.7rem,4vw,2.6rem);line-height:1.15}
+h2.t{font-size:clamp(1.3rem,3vw,1.8rem);margin:30px 0 14px;display:flex;justify-content:space-between;align-items:end;gap:10px;flex-wrap:wrap}
+h2.t small{font-size:.9rem;font-weight:600;color:var(--blue2)}
+.pagehead{background:linear-gradient(135deg,var(--blue3),var(--blue) 60%,var(--blue2));color:#fff;padding:34px 0 40px;margin-bottom:24px;position:relative;overflow:hidden}
+.pagehead::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,138,0,.45),transparent 70%)}
+.pagehead p{opacity:.85;max-width:640px;margin-top:6px}
+.notice{padding:12px 16px;border-radius:12px;background:#fff7e0;border:1px solid #f1d58a;color:#6a4a00;font-size:.9rem}
+.notice.info{background:#eaf0ff;border-color:#c5d3ff;color:var(--blue3)}
+.notice.bad{background:#fdeaea;border-color:#f2b9b9;color:#7b1f1f}
+.preview-bar{background:var(--gold);color:var(--blue3);text-align:center;font-size:.82rem;font-weight:700;padding:5px 10px}
+.empty{text-align:center;padding:36px 16px;color:var(--muted);border:2px dashed var(--line);border-radius:var(--r);background:#fff}
+.empty .ic{font-size:2.2rem}
+
+/* formulaires */
+form .f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+label{font-weight:600;font-size:.88rem}
+input,select,textarea{padding:11px 13px;border:1.5px solid var(--line);border-radius:12px;background:#fff;width:100%;outline:0}
+input:focus,select:focus,textarea:focus{border-color:var(--blue2);box-shadow:0 0 0 3px rgba(27,85,214,.15)}
+textarea{min-height:90px;resize:vertical}
+.err{color:var(--bad);font-size:.8rem;min-height:1em}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>*{flex:1;min-width:160px}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.filters>*{flex:1;min-width:140px}
+
+/* tables */
+.tw{overflow-x:auto;border-radius:14px;border:1px solid var(--line);background:#fff}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:#eef2ff;color:var(--blue3)}
+td.wrapc{white-space:normal}
+
+/* ============================ 4. ACCUEIL ============================ */
+.hero{background:radial-gradient(1200px 500px at 80% -10%,rgba(255,138,0,.35),transparent 60%),linear-gradient(135deg,var(--blue3),var(--blue) 55%,var(--blue2));color:#fff;padding:54px 0 70px;overflow:hidden;position:relative}
+.hero .in{display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:center}
+.hero h1{font-size:clamp(2rem,5.2vw,3.5rem);line-height:1.08;font-weight:900}
+.hero h1 span{background:linear-gradient(90deg,var(--gold),var(--gold2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{font-size:1.1rem;opacity:.9;margin:14px 0 22px;max-width:520px}
+.hero .cta{display:flex;gap:10px;flex-wrap:wrap}
+.stage{perspective:900px;height:340px;position:relative}
+.scene{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .15s}
+.fc{position:absolute;width:150px;padding:14px;border-radius:20px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(8px);box-shadow:var(--shadow2);animation:float 6s ease-in-out infinite;text-align:center}
+.fc .e{font-size:2.2rem}.fc b{display:block;font-size:.85rem;margin-top:4px}
+.fc:nth-child(1){left:6%;top:6%;transform:translateZ(60px)}
+.fc:nth-child(2){right:4%;top:14%;transform:translateZ(110px);animation-delay:-1.5s}
+.fc:nth-child(3){left:22%;top:46%;transform:translateZ(150px);animation-delay:-3s;background:linear-gradient(135deg,rgba(255,138,0,.9),rgba(255,216,115,.9));color:var(--blue3)}
+.fc:nth-child(4){right:10%;bottom:2%;transform:translateZ(80px);animation-delay:-4.5s}
+@keyframes float{0%,100%{margin-top:0}50%{margin-top:-14px}}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);padding:10px 16px;border-radius:99px;font-weight:600;box-shadow:var(--shadow);transition:.2s}
+.chip:hover{transform:translateY(-3px);border-color:var(--gold)}
+.svc{text-align:center;transition:.25s;cursor:pointer}
+.svc:hover{transform:translateY(-6px) rotateX(4deg);box-shadow:var(--shadow2)}
+.svc .e{font-size:2.4rem;display:block;margin-bottom:6px}
+.svc h3{font-size:1.02rem}
+.svc p{font-size:.85rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-top:-34px;position:relative;z-index:2}
+.stat{background:#fff;border-radius:16px;padding:16px;text-align:center;box-shadow:var(--shadow);border-bottom:4px solid var(--gold)}
+.stat b{font-size:1.5rem;color:var(--blue)}.stat span{display:block;font-size:.8rem;color:var(--muted)}
+.ad{background:linear-gradient(135deg,#fff3cf,#ffe39a);border:2px dashed var(--gold);border-radius:var(--r);padding:20px;text-align:center;color:#6a4a00}
+
+/* items */
+.item{display:flex;flex-direction:column;gap:8px;transition:.2s}
+.item:hover{transform:translateY(-4px);box-shadow:var(--shadow2)}
+.item .ph{height:110px;border-radius:12px;background:linear-gradient(135deg,#e8eeff,#fdf3d6);display:grid;place-items:center;font-size:2.6rem}
+.item h3{font-size:1.02rem}
+.item .meta{display:flex;gap:6px;flex-wrap:wrap}
+.item .price{font-weight:800;color:var(--blue)}
+.item .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}
+.fav.on{color:var(--bad)}
+.pager{display:flex;gap:6px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+.pager button{padding:7px 13px;border-radius:10px;background:#fff;border:1px solid var(--line);font-weight:700}
+.pager button.on{background:var(--blue);color:#fff}
+
+/* plans */
+.plan{position:relative;text-align:center}
+.plan.pop{border:2px solid var(--gold);transform:scale(1.02)}
+.plan .pr{font-size:1.8rem;font-weight:900;color:var(--blue)}
+.plan ul{list-style:none;text-align:left;margin:12px 0;font-size:.9rem}
+.plan li::before{content:"✔ ";color:var(--ok)}
+.plan li{padding:2px 0}
+
+/* dashboard */
+.dash{display:grid;grid-template-columns:230px 1fr;gap:20px;align-items:start}
+.side{background:#fff;border-radius:var(--r);padding:10px;box-shadow:var(--shadow);position:sticky;top:130px}
+.side button,.side a{display:block;width:100%;text-align:left;padding:10px 12px;border-radius:10px;font-weight:600;font-size:.92rem}
+.side button:hover,.side button.on{background:#eef2ff;color:var(--blue)}
+.kpi{background:#fff;border-radius:16px;padding:16px;box-shadow:var(--shadow);border-left:5px solid var(--gold)}
+.kpi b{font-size:1.5rem;display:block;color:var(--blue)}.kpi span{font-size:.82rem;color:var(--muted)}
+.bars{display:flex;align-items:flex-end;gap:10px;height:170px;padding:10px 4px;border-bottom:2px solid var(--line)}
+.bars div{flex:1;background:linear-gradient(180deg,var(--gold),var(--blue2));border-radius:8px 8px 0 0;min-height:3px;position:relative;text-align:center}
+.bars div span{position:absolute;bottom:-22px;left:0;right:0;font-size:.7rem;color:var(--muted)}
+.bars div i{position:absolute;top:-20px;left:0;right:0;font-size:.72rem;font-style:normal;font-weight:700}
+.avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--blue2));color:#fff;display:grid;place-items:center;font-size:1.8rem;font-weight:800;overflow:hidden;border:3px solid var(--gold)}
+.avatar img{width:100%;height:100%;object-fit:cover}
+
+/* modales + toasts */
+#modal{position:fixed;inset:0;background:rgba(5,27,77,.6);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}
+#modal.open{display:flex}
+#modal .box{background:#fff;border-radius:22px;width:min(560px,100%);max-height:90vh;overflow:auto;padding:22px;position:relative;animation:pop .25s}
+@keyframes pop{from{transform:scale(.92);opacity:0}}
+#modal .x{position:absolute;right:14px;top:10px;font-size:1.5rem}
+#toasts{position:fixed;right:14px;bottom:14px;display:flex;flex-direction:column;gap:8px;z-index:200;max-width:min(360px,calc(100% - 28px))}
+.toast{background:var(--blue3);color:#fff;padding:12px 16px;border-radius:14px;box-shadow:var(--shadow2);border-left:5px solid var(--gold);animation:slide .3s}
+.toast.bad{border-color:var(--bad)}.toast.ok{border-color:var(--ok)}
+@keyframes slide{from{transform:translateX(40px);opacity:0}}
+.bell{position:relative;color:#fff;font-size:1.25rem;padding:4px 8px}
+.bell i{position:absolute;top:-2px;right:-2px;background:var(--bad);font-size:.65rem;font-style:normal;border-radius:99px;padding:1px 5px;font-weight:800}
+.skel{height:120px;border-radius:16px;background:linear-gradient(90deg,#eef2ff,#fff,#eef2ff);background-size:200% 100%;animation:sk 1.2s infinite}
+@keyframes sk{to{background-position:-200% 0}}
+
+/* ============================ 5. RESPONSIVE ============================ */
+@media(max-width:900px){
+  .hero .in{grid-template-columns:1fr}.stage{height:260px;perspective:1500px}.fc:nth-child(2){right:9%}.fc:nth-child(4){right:14%}
+  .dash{grid-template-columns:1fr}.side{position:static;display:flex;overflow-x:auto;gap:4px}.side button{white-space:nowrap;width:auto}
+  .burger{display:block}
+  .bar{gap:8px}.logo{flex:1;font-size:1.1rem}.logo svg{width:32px;height:32px}
+  .actions{margin-left:auto}.actions .btn{display:none}
+  .navact{display:flex;gap:8px;flex-wrap:wrap;padding:10px 4px 4px;margin-top:6px;border-top:1px solid rgba(255,255,255,.18)}
+  .navact .btn{flex:1;min-width:120px}
+  .search button{padding:0 14px}
+  nav.main{display:none;position:absolute;top:100%;left:0;right:0;background:var(--blue3);flex-direction:column;padding:10px;margin:0;max-height:calc(100vh - 130px);overflow-y:auto;box-shadow:0 18px 30px rgba(0,0,0,.35)}
+  nav.main.open{display:flex}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{header.top,footer.foot,.side,.btn,#toasts,.preview-bar{display:none!important}body{background:#fff}.card,.tw{box-shadow:none}}
+
+/* ---- Publicité, vendu / stock, contacts ---- */
+.item .ph{position:relative;overflow:hidden}
+.item.soldc .ph::after{content:"VENDU";position:absolute;left:8px;bottom:8px;background:#c62828;color:#fff;font-weight:800;font-size:.75rem;letter-spacing:1px;padding:3px 10px;border-radius:6px;transform:rotate(-4deg)}
+.item.soldc .ph img{filter:grayscale(.7);opacity:.75}
+.cinfo{font-size:.85rem;color:var(--muted);display:grid;gap:2px}
+.cinfo a{color:var(--blue2)}
+.adwrap{margin:14px 0}
+.adrot{position:relative;border-radius:16px;overflow:hidden;background:var(--blue3);aspect-ratio:16/5;min-height:130px;box-shadow:var(--shadow)}
+.adslide{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .6s;display:block;color:#fff}
+.adslide.on{opacity:1;pointer-events:auto;z-index:1}
+.adslide img,.adslide video{width:100%;height:100%;object-fit:cover;display:block}
+.adcap{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 10px;background:linear-gradient(transparent,rgba(0,0,0,.7));font-weight:700}
+.adtag{position:absolute;top:8px;right:8px;z-index:3;background:rgba(0,0,0,.55);color:#fff;font-size:.68rem;padding:2px 8px;border-radius:99px}
+.adlink{display:inline-block;margin-top:6px;font-size:.82rem;color:var(--blue2);font-weight:600}
+a.adempty{display:block;text-decoration:none}
+.adthumb{height:120px;border-radius:12px;overflow:hidden;background:#eef2ff;margin-bottom:8px}
+.adthumb img,.adthumb video{width:100%;height:100%;object-fit:cover}
+@media(max-width:640px){.adrot{aspect-ratio:16/8}}
+/* ============================ DigiZORA – DESIGN 2026 ============================ */
+:root{--orange:#ff8a00;--orange2:#ff5f00;--glass:rgba(255,255,255,.72);--shadow:0 12px 34px rgba(5,27,77,.12);--shadow2:0 30px 70px rgba(5,27,77,.32)}
+body{background:radial-gradient(900px 520px at 100% -5%,rgba(255,138,0,.10),transparent 60%),radial-gradient(900px 600px at -10% 25%,rgba(27,85,214,.09),transparent 60%),#f5f8ff;background-attachment:fixed}
+header.top{background:rgba(255,255,255,.86);-webkit-backdrop-filter:saturate(1.8) blur(16px);backdrop-filter:saturate(1.8) blur(16px);color:var(--blue3);box-shadow:0 8px 30px rgba(5,27,77,.08);border-bottom:1px solid rgba(10,47,122,.07)}
+.logo{padding:2px 0}.logo img{height:50px;width:auto;display:block;transition:transform .35s cubic-bezier(.2,.8,.2,1)}.logo:hover img{transform:scale(1.05) rotate(-1deg)}
+nav.main a{color:var(--blue3);font-weight:600;opacity:1;transition:.2s}
+nav.main a:hover{background:rgba(10,47,122,.07);color:var(--blue)}
+nav.main a.on{background:linear-gradient(135deg,rgba(255,138,0,.22),rgba(255,138,0,.08));color:var(--blue3);box-shadow:inset 0 -2px 0 var(--orange)}
+.burger{color:var(--blue3)}.bell{color:var(--blue3)}
+.search{box-shadow:0 8px 26px rgba(5,27,77,.10);border:1px solid var(--line)}
+.btn{transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,filter .25s;position:relative;overflow:hidden}
+.btn:hover{transform:translateY(-2px) scale(1.02);filter:brightness(1.05)}.btn:active{transform:scale(.97)}
+.btn.gold{background:linear-gradient(135deg,var(--orange),#ffb347);box-shadow:0 8px 22px rgba(255,138,0,.42);color:#2a1300}
+.btn.gold::after,.btn.blue::after{content:"";position:absolute;top:0;left:-120%;width:60%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent);transform:skewX(-20deg);transition:left .7s}
+.btn.gold:hover::after,.btn.blue:hover::after{left:140%}
+.btn.blue{background:linear-gradient(135deg,var(--blue),var(--blue2));box-shadow:0 8px 22px rgba(27,85,214,.38)}
+.card{border-radius:22px;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s,border-color .35s;border:1px solid rgba(10,47,122,.08)}
+.card:hover{box-shadow:var(--shadow2)}
+.tilt{transform-style:preserve-3d;will-change:transform}
+.rv{opacity:0;transform:translateY(28px) scale(.98);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.8,.2,1)}
+.rv.in{opacity:1;transform:none}
+h2.t{position:relative;padding-left:16px}h2.t::before{content:"";position:absolute;left:0;top:.12em;bottom:.12em;width:6px;border-radius:6px;background:linear-gradient(var(--orange),var(--orange2))}
+.pagehead{background:radial-gradient(600px 260px at 90% 0,rgba(255,138,0,.4),transparent 70%),linear-gradient(135deg,var(--blue3),var(--blue) 65%,#16449f)}
+/* HERO */
+.hero{background:radial-gradient(900px 520px at 88% -10%,rgba(255,138,0,.5),transparent 60%),radial-gradient(800px 520px at -5% 105%,rgba(27,85,214,.65),transparent 60%),linear-gradient(135deg,#041543,#0a2f7a 58%,#12409a);padding:64px 0 90px}
+.hero::before,.hero::after{content:"";position:absolute;border-radius:50%;filter:blur(46px);animation:drift 14s ease-in-out infinite;pointer-events:none}
+.hero::before{width:320px;height:320px;background:#ff8a00;left:-90px;top:-70px;opacity:.28}
+.hero::after{width:400px;height:400px;background:#1b55d6;right:34%;bottom:-190px;opacity:.4;animation-delay:-6s}
+@keyframes drift{50%{transform:translate(46px,34px) scale(1.15)}}
+.hero .in{position:relative;z-index:2}
+.hero h1{letter-spacing:-.5px}
+.hero .stats{display:flex;gap:22px;flex-wrap:wrap;margin-top:26px}
+.hero .stats div{font-size:.84rem;opacity:.92;border-left:3px solid var(--orange);padding-left:10px;line-height:1.3}
+.hero .stats b{display:block;font-size:1.05rem}
+.stage{height:380px}
+.logocard{position:absolute;left:50%;top:50%;width:min(400px,88%);transform:translate(-50%,-50%) translateZ(40px);background:#fff;border-radius:30px;padding:24px 28px;box-shadow:0 50px 90px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.7);animation:float 7s ease-in-out infinite}
+.logocard img{width:100%;display:block}
+.fc{width:140px;padding:12px}
+.fc:nth-child(1){left:0;top:2%;transform:translateZ(120px)}
+.fc:nth-child(2){right:0;top:6%;transform:translateZ(150px);animation-delay:-1.5s}
+.fc:nth-child(3){left:2%;top:auto;bottom:3%;transform:translateZ(130px);animation-delay:-3s;background:linear-gradient(135deg,rgba(255,138,0,.95),rgba(255,179,71,.95));color:#2a1300}
+.fc:nth-child(4){right:1%;bottom:0;transform:translateZ(160px);animation-delay:-4.5s}
+/* BOUTIQUES */
+.tier{display:inline-flex;align-items:center;gap:4px;font-size:.72rem;font-weight:800;padding:4px 10px;border-radius:99px;letter-spacing:.3px;background:#fff;color:var(--blue3);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.shopc .tier{position:absolute;right:10px;top:10px;z-index:3}.tier.inl{position:static}
+.tier.t1{background:#e3edff;color:var(--blue)}.tier.t2{background:linear-gradient(135deg,#7a2bff,#ff5f00);color:#fff}.tier.t3{background:linear-gradient(135deg,#ffd36b,#ff8a00);color:#2a1300}
+.shopc{display:block;padding:0!important;overflow:hidden;position:relative;border-radius:24px}
+.shopc .cv{height:118px;position:relative;background:linear-gradient(135deg,#0a2f7a,#1b55d6);background-size:cover;background-position:center}
+.shopc.t1 .cv{background-color:#0a2f7a;background-image:linear-gradient(135deg,#0a2f7a,#2b6bff)}
+.shopc.t2 .cv{background-image:linear-gradient(135deg,#0a2f7a,#7a2bff 55%,#ff5f00)}
+.shopc.t3 .cv{background-image:linear-gradient(135deg,#1a1200,#b8860b 45%,#ffd36b)}
+.shopc .cv[style*="url"]{background-size:cover}
+.shopc .lg{position:absolute;left:16px;top:84px;width:64px;height:64px;border-radius:18px;background:#fff;border:3px solid #fff;box-shadow:0 10px 24px rgba(5,27,77,.28);display:grid;place-items:center;font-size:1.8rem;overflow:hidden;z-index:2}
+.shopc .lg img{width:100%;height:100%;object-fit:cover}
+.shopc .bd{padding:42px 16px 16px;display:grid;gap:6px}.shopc h3{font-size:1.08rem}
+.shopc .sl{font-style:italic;color:var(--orange2);font-size:.86rem;font-weight:600}
+.shopc .meta{display:flex;gap:6px;flex-wrap:wrap}
+.shopc .visit{font-weight:700;color:var(--blue);font-size:.88rem;margin-top:4px}
+.shopc:hover{box-shadow:0 26px 60px rgba(5,27,77,.3)}
+.shopc.t3{border:0;box-shadow:0 0 0 2px #ffb347,0 18px 50px rgba(255,138,0,.32);animation:glow 3.2s ease-in-out infinite}
+@keyframes glow{50%{box-shadow:0 0 0 3px #ffd36b,0 22px 60px rgba(255,138,0,.5)}}
+.shopc.t2{box-shadow:0 0 0 1px rgba(122,43,255,.35),0 16px 40px rgba(122,43,255,.18)}
+.plans4{align-items:stretch}
+.plan{display:flex;flex-direction:column;overflow:hidden}.plan ul{flex:1}
+.plan .tier{align-self:center;margin-bottom:6px}
+.plan.t0{border-top:5px solid #9bb0d9}.plan.t1{border-top:5px solid var(--blue2)}
+.plan.t2{border-top:5px solid #7a2bff;box-shadow:0 18px 50px rgba(122,43,255,.22)}
+.plan.t3{background:linear-gradient(160deg,#fffaf0,#fff2cf);border:2px solid #ffb347;box-shadow:0 24px 60px rgba(255,138,0,.35)}
+.plan.t3 .pr{background:linear-gradient(90deg,#b8860b,#ff8a00);-webkit-background-clip:text;background-clip:text;color:transparent}
+.plan.pop{transform:none;border:none}
+.plan .ribbon{position:absolute;top:14px;right:-34px;transform:rotate(40deg);background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;font-size:.7rem;font-weight:800;padding:4px 40px}
+.cmp{width:100%;border-collapse:collapse;font-size:.88rem;background:#fff}
+.cmp th,.cmp td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:center}.cmp td:first-child,.cmp th:first-child{text-align:left;font-weight:600}
+.cmp th{background:var(--blue3);color:#fff}.cmp th:last-child{background:linear-gradient(135deg,#b8860b,#ff8a00)}
+.cmp .y{color:var(--ok);font-weight:800}.cmp .n{color:#b9c2d9}
+/* BOUTIQUE PUBLIQUE */
+.shophero{position:relative;color:#fff;overflow:hidden;background:linear-gradient(135deg,#051b4d,#0a2f7a 60%,#1b55d6)}
+.shophero.t1{background:linear-gradient(135deg,#0a2f7a,#2b6bff)}
+.shophero.t2{background:linear-gradient(135deg,#0a2f7a,#7a2bff 55%,#ff5f00)}
+.shophero.t3{background:linear-gradient(135deg,#1a1200,var(--ac,#b8860b) 55%,#ffd36b)}
+.shophero .cover{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.04);transition:transform 8s ease}
+.shophero:hover .cover{transform:scale(1.12)}
+.shophero.t2 .cover,.shophero.t3 .cover{animation:kb 18s ease-in-out infinite alternate}
+@keyframes kb{to{transform:scale(1.14) translate(-1.5%,-1%)}}
+.shophero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(5,27,77,.15),rgba(5,27,77,.82))}
+.shophero .wrap{position:relative;z-index:2;padding:70px 0 26px}
+.shopid{display:flex;gap:18px;align-items:flex-end;flex-wrap:wrap}
+.shopid .lgb{width:104px;height:104px;border-radius:26px;background:#fff;border:4px solid #fff;box-shadow:0 16px 40px rgba(0,0,0,.4);display:grid;place-items:center;font-size:3rem;overflow:hidden;flex:none}
+.shopid .lgb img{width:100%;height:100%;object-fit:cover}
+.shopid .txt{flex:1;min-width:220px}.shopid h1{font-size:clamp(1.6rem,4vw,2.4rem);line-height:1.1;margin:6px 0 4px}
+.shopid .sl{font-style:italic;color:#ffd9a3;font-weight:600}
+.shopid .own{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.35);padding:8px 14px 8px 8px;border-radius:99px;backdrop-filter:blur(6px);font-size:.85rem}
+.shopid .own .avatar{width:44px;height:44px;font-size:1.1rem}
+.announce{background:linear-gradient(90deg,var(--orange),var(--orange2));color:#fff;font-weight:700;padding:11px 0;text-align:center;overflow:hidden}
+.announce span{display:inline-block;animation:slidein .8s both}
+@keyframes slidein{from{transform:translateY(-100%);opacity:0}}
+.sharebar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0}
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:20px}
+.pcard{display:flex;flex-direction:column;gap:8px;padding:12px!important}
+.pcard .pimg{position:relative;aspect-ratio:1/1;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#e8eeff,#ffe9cc);display:grid;place-items:center;font-size:3rem}
+.pcard .pimg img{width:100%;height:100%;object-fit:cover;transition:transform .6s}.pcard:hover .pimg img{transform:scale(1.08)}
+.pcard .promo{position:absolute;left:8px;top:8px;background:linear-gradient(135deg,#ff3b30,#ff8a00);color:#fff;font-weight:800;font-size:.78rem;padding:4px 10px;border-radius:99px;box-shadow:0 6px 14px rgba(255,59,48,.4)}
+.pcard .sold{position:absolute;left:0;right:0;bottom:0;background:rgba(198,40,40,.92);color:#fff;text-align:center;font-weight:800;padding:5px;letter-spacing:1px}
+.pcard h3{font-size:1rem}.pcard .pr{font-size:1.2rem;font-weight:900;color:var(--blue)}.pcard .pr s{font-size:.82rem;color:var(--muted);font-weight:500}
+.pcard .dl{font-size:.82rem;color:var(--muted)}.pcard .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto}.pcard .btns .btn.gold{flex:1}
+.pcard.soldc .pimg img{filter:grayscale(.8);opacity:.7}
+.big .pcard{box-shadow:0 14px 38px rgba(5,27,77,.14)}
+.t3p .pcard{border:1px solid #ffd9a3}
+.totbox{background:#f3f7ff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:6px 0 12px;font-size:.92rem;display:grid;gap:4px}
+.totbox .tt{display:flex;justify-content:space-between;font-weight:900;color:var(--blue);font-size:1.1rem;border-top:1px dashed var(--line);padding-top:6px;margin-top:4px}
+.ordsum{display:flex;gap:12px;align-items:center;margin:10px 0}.ordsum img{width:64px;height:64px;object-fit:cover;border-radius:12px}
+.chipsrow{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.chipb{padding:5px 12px;border-radius:99px;border:1px solid var(--line);background:#fff;font-size:.82rem;font-weight:700;color:var(--blue)}.chipb:hover{background:var(--blue);color:#fff}
+.shopadm .sh-top{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.shopadm .sh-lg{width:64px;height:64px;border-radius:18px;background:#eef2ff;display:grid;place-items:center;font-size:2rem;overflow:hidden;flex:none}.shopadm .sh-lg img{width:100%;height:100%;object-fit:cover}
+.shopadm .btns2{display:flex;gap:8px;flex-wrap:wrap}
+.shopadm.t3{border:2px solid #ffb347}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;counter-reset:s}
+.stepc{background:#fff;border-radius:20px;padding:18px;border:1px solid var(--line);box-shadow:var(--shadow);position:relative;counter-increment:s}
+.stepc::before{content:counter(s);position:absolute;right:14px;top:8px;font-size:2.6rem;font-weight:900;color:rgba(255,138,0,.2)}
+.stepc .e{font-size:1.8rem}
+.vipband{background:linear-gradient(135deg,#1a1200,#5c3d00 55%,#b8860b);color:#fff;border-radius:28px;padding:26px 22px 22px;margin-top:10px;position:relative;overflow:hidden}
+.vipband::after{content:"👑";position:absolute;right:18px;top:6px;font-size:5rem;opacity:.12}
+.vipband h2{color:#ffd36b;margin-bottom:12px}
+.promoband{background:linear-gradient(135deg,var(--blue3),var(--blue) 60%,#7a2bff);color:#fff;border-radius:28px;padding:30px 24px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:30px;box-shadow:var(--shadow2)}
+.promoband h3{font-size:1.5rem}.promoband p{opacity:.9;max-width:560px;margin-top:4px}
+.ord .oh{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center}
+.ord .ob{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:900px){
+  .logo img{height:42px}
+  nav.main{background:rgba(255,255,255,.98)!important;box-shadow:0 22px 40px rgba(5,27,77,.22)!important}
+  .navact{border-top-color:var(--line)!important}
+  .stage{height:330px}.logocard{width:min(300px,80%);padding:16px 18px}.fc{width:112px;padding:8px}.fc .e{font-size:1.6rem}
+  .shopid .lgb{width:80px;height:80px;font-size:2.2rem}
+}
+
+</style>
+</head>
+<body>
+
+<div id="previewbar" class="preview-bar hide"></div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="bar">
+      <a href="#/" class="logo" aria-label="DigiZORA accueil">
+        <img src="/logo.png" alt="DigiZORA – Le numérique sans frontières" width="130" height="66">
+      </a>
+      <nav class="main" id="nav" aria-label="Menu principal"></nav>
+      <div class="actions" id="actions"></div>
+      <button class="burger" id="burger" aria-label="Menu">☰</button>
+    </div>
+    <div class="searchrow">
+      <form class="search" id="gsearch" role="search">
+        <input id="gq" type="search" placeholder="Que cherchez-vous ?" aria-label="Recherche">
+        <button type="submit">Rechercher</button>
+      </form>
+    </div>
+  </div>
+</header>
+
+<main id="view" tabindex="-1"></main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="cols">
+      <div><h4>DigiZORA</h4><p>Le numérique sans frontières.</p><p style="margin-top:8px">Une initiative de <b>Nexus Solutions Group</b>, Brazzaville, République du Congo.</p></div>
+      <div><h4>Services</h4><a href="#/boutiques">Boutiques</a><a href="#/comptes-pro">Comptes pro</a><a href="#/emploi">Emploi</a><a href="#/annonces">Annonces</a><a href="#/immobilier">Immobilier</a><a href="#/formations">Formations</a><a href="#/publicite">Publicité</a></div>
+      <div><h4>Assistance</h4><a id="fwa" href="#" target="_blank" rel="noopener">WhatsApp : <span id="fwan"></span></a><a href="#/legal/terms">Conditions d'utilisation</a><a href="#/legal/privacy">Confidentialité</a><a href="#/legal/moderation">Règles de modération</a></div>
+      <div><h4>Nexus Solutions Group</h4><p>Startup numérique congolaise. Conception de plateformes pour les institutions, commerces et particuliers.</p></div>
+    </div>
+    <div class="copy">© <span id="yr"></span> DigiZORA – Nexus Solutions Group. Tous droits réservés.</div>
+  </div>
+</footer>
+
+<div id="modal" role="dialog" aria-modal="true"><div class="box"><button class="x" data-act="closeModal" aria-label="Fermer">×</button><div id="mbody"></div></div></div>
+<div id="toasts" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ==========================================================================
+   1. CONFIGURATION  –  À MODIFIER POUR CONNECTER LES SERVICES EXTERNES
+   ========================================================================== */
+const CONFIG = {
+  API_URL: "",                       // Ex. "https://api.digizora.cg" . Vide = mode aperçu (aucune donnée serveur).
+  PAY_API: "/api/payments/initiate", // Point d'entrée serveur du paiement électronique (Mobile Money). Clés secrètes côté serveur uniquement.
+  UPLOAD_API: "/api/uploads",        // Stockage des fichiers (preuves de paiement, photos, CV) côté serveur.
+  WHATSAPP: "242065292598",          // Numéro officiel, format international sans "+"
+  WHATSAPP_LABEL: "+242 06 529 25 98",
+  CURRENCY: "FCFA",
+  PAGE_SIZE: 6,
+  MAX_FILE_MB: 2,
+  FILE_TYPES: ["image/jpeg","image/png","image/webp","application/pdf"]
+};
+let BACKEND = !!CONFIG.API_URL;   // activé automatiquement si le serveur DigiZORA répond sur le même domaine
+
+/* ==========================================================================
+   2. UTILITAIRES
+   ========================================================================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const money = n => new Intl.NumberFormat("fr-FR").format(Math.round(n)) + " " + CONFIG.CURRENCY;
+const fdate = t => new Date(t).toLocaleDateString("fr-FR", { day:"2-digit", month:"short", year:"numeric" });
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const slug = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+const DAY = 864e5;
+const CITIES = ["Brazzaville","Pointe-Noire","Dolisie","Nkayi","Ouesso","Owando","Impfondo","Sibiti","Madingou","Kinkala"];
+const ROLES = { particulier:"Particulier", commercant:"Commerçant", entreprise:"Entreprise", demandeur:"Demandeur d'emploi", recruteur:"Recruteur", prestataire:"Prestataire", formateur:"Formateur", admin:"Administrateur" };
+const wa = txt => `https://wa.me/${CONFIG.WHATSAPP}?text=${encodeURIComponent(txt)}`;
+
+function toast(msg, type = "") {
+  const d = document.createElement("div");
+  d.className = "toast " + type; d.textContent = msg;
+  $("#toasts").appendChild(d);
+  setTimeout(() => d.remove(), 5200);
+}
+function openModal(html) { $("#mbody").innerHTML = html; $("#modal").classList.add("open"); }
+function closeModal() { $("#modal").classList.remove("open"); $("#mbody").innerHTML = ""; }
+$("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+/* ==========================================================================
+   3. ÉTAT, PRÉFÉRENCES ET MODE APERÇU
+   - Avec backend : toutes les données partagées viennent de l'API.
+   - Sans backend : mode aperçu. Les données saisies restent sur CET appareil,
+     sont marquées comme telles, et aucun paiement n'est jamais simulé.
+   - Aucun mot de passe n'est jamais stocké côté navigateur.
+   ========================================================================== */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { toast("Stockage local indisponible.", "bad"); } }
+};
+const DEFAULT_SETTINGS = {
+  plans: [
+    { id:"basique", tier:0, name:"Boutique Basique", price:5000, products:10, features:["10 produits maximum","Logo et photo du vendeur","1 photo par produit","Commandes en ligne avec livraison","Lien WhatsApp"] },
+    { id:"plus", tier:1, name:"Boutique Plus", price:10000, products:40, features:["40 produits","Image de couverture personnalisée","Présentation soignée des produits","Visibilité améliorée dans la liste","Recherche et tri dans la boutique","Description détaillée des produits"] },
+    { id:"premium", tier:2, name:"Boutique Premium", price:15000, products:150, features:["150 produits","Design premium avec effets 3D","Bandeau publicitaire et annonces","Prix promotionnels (ancien prix barré)","Outils marketing : partage WhatsApp / Facebook","Mise en avant dans la catégorie"] },
+    { id:"vip", tier:3, name:"Boutique VIP", price:35000, products:9999, features:["Produits illimités","Expérience haut de gamme (thème or et couleur au choix)","Visibilité maximale : en tête et page d'accueil","Badge VIP et boutique certifiée","Publicité incluse et outils marketing complets","Support prioritaire dédié"] }
+  ],
+  proPlans: [
+    { id:"immobilier", label:"Immobilier", icon:"🏠", module:"realestate", price:25000, desc:"Agences, promoteurs, agents et bailleurs : publiez vos biens avec badge professionnel et passage en tête des listes." },
+    { id:"transport", label:"Transport & livraison", icon:"🚚", module:"transport", price:20000, desc:"Transporteurs, chauffeurs et livreurs : présentez vos services de transport de personnes et de marchandises." },
+    { id:"location", label:"Location de véhicules", icon:"🚗", module:"rental", price:20000, desc:"Loueurs de voitures, bus et engins : publiez votre parc de véhicules avec tarifs et contacts." },
+    { id:"services", label:"Autres services professionnels", icon:"🛠️", module:"pros", price:15000, desc:"Artisans, bureaux d'études, prestataires et entreprises de services : soyez référencé comme professionnel vérifié." }
+  ],
+  durations: [ { id:"m", label:"Mensuel", months:1, discount:0 }, { id:"t", label:"Trimestriel", months:3, discount:5 }, { id:"s", label:"Semestriel", months:6, discount:10 }, { id:"a", label:"Annuel", months:12, discount:20 } ],
+  jobValidationFee: 2000, freeAdLimit: 5, sponsoredAdFee: 3000, jobPostFee: 5000, commissionPct: 3,
+  adPlans: [ { id:"j1", label:"1 jour", days:1, price:1000 }, { id:"j2", label:"2 jours", days:2, price:2000 }, { id:"j3", label:"3 jours", days:3, price:3000 }, { id:"j7", label:"1 semaine", days:7, price:10000 } ]
+};
+const S = {
+  user: LS.get("dc_user", null),
+  favs: LS.get("dc_favs", []),
+  local: LS.get("dc_local", { items:{}, requests:[], notifs:[], reports:[], apps:[], msgs:[], shops:[], audit:[], settings:DEFAULT_SETTINGS })
+};
+if (!S.local.settings) S.local.settings = DEFAULT_SETTINGS;
+const saveLocal = () => { if (!BACKEND) LS.set("dc_local", S.local); };
+const saveUser = () => { if (!BACKEND) LS.set("dc_user", S.user); };
+const settings = () => S.local.settings;
+const audit = a => { S.local.audit.unshift({ t:Date.now(), who:S.user?.name || "—", a }); S.local.audit = S.local.audit.slice(0, 200); saveLocal(); };
+const notify = (text) => { S.local.notifs.unshift({ id:uid(), t:Date.now(), text, read:false }); saveLocal(); renderChrome(); };
+
+/* ---- Client API (utilisé uniquement si CONFIG.API_URL est renseigné) ---- */
+async function api(path, opts = {}) {
+  if (!BACKEND) { const e = new Error("NO_BACKEND"); e.code = "NO_BACKEND"; throw e; }
+  const h = { "Accept":"application/json" };
+  if (!(opts.body instanceof FormData)) h["Content-Type"] = "application/json";
+  const csrf = document.cookie.split("; ").find(c => c.startsWith("XSRF-TOKEN="));
+  if (csrf) h["X-XSRF-TOKEN"] = decodeURIComponent(csrf.split("=")[1]);
+  const res = await fetch(CONFIG.API_URL + path, {
+    method: opts.method || "GET", headers: h, credentials: "include",
+    body: opts.body instanceof FormData ? opts.body : opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  const data = await res.json().catch(() => ({}));
+  if (res.status === 401 && S.user && !path.startsWith("/api/auth/")) { S.user = null; saveUser(); renderChrome(); }
+  if (!res.ok) { const e = new Error(data.message || "Erreur serveur (" + res.status + ")"); e.status = res.status; throw e; }
+  return data;
+}
+const previewNote = () => toast("Mode aperçu : enregistré uniquement sur cet appareil. Connectez le backend pour publier réellement.", "");
+/* Synchronisation : en mode réel, les données personnelles viennent du serveur (jamais du navigateur) */
+const EMPTY_LOCAL = () => ({ ads:[], outbox:[], items:{}, requests:[], notifs:[], reports:[], apps:[], received:[], msgs:[], shops:[], audit:[], users:[], adminMsgs:[], orders:[], pro:[], userMods:[], jobprofile:null, settings:S.local.settings });
+async function syncAll() {
+  if (!BACKEND || !S.user) return;
+  try { const d = await api("/api/sync"); Object.assign(S.local, EMPTY_LOCAL(), d); S.stats = d.stats || null; }
+  catch (e) { if (e.status !== 401) toast(e.message, "bad"); }
+}
+function receivedTable(L) {
+  const r = L.received || []; if (!r.length) return "";
+  return `<h2 class="t" style="margin-top:0">Reçues sur vos publications</h2><div class="tw" style="margin-bottom:18px"><table><tr><th>Date</th><th>Publication</th><th>Candidat</th><th>Contact</th><th>Profil</th><th>CV</th></tr>${r.map(x => `<tr><td>${fdate(x.t)}</td><td>${esc(x.title)}</td><td>${esc(x.name)}</td><td>${esc(x.phone || x.email || "")}</td><td class="wrapc">${esc(x.profile || "—")}${x.skills ? " – " + esc(x.skills) : ""}</td><td>${x.cvUrl ? `<a class="btn blue sm" target="_blank" rel="noopener" href="${esc(x.cvUrl)}">Voir</a>` : "—"}</td></tr>`).join("")}</table></div>`;
+}
+
+/* ==========================================================================
+   4. DONNÉES D'EXEMPLE (affichées uniquement en mode aperçu, étiquetées « Exemple »)
+   ========================================================================== */
+const SAMPLE = {
+  shops: [
+    { id:"s1", name:"Mboka Électro", cat:"Électronique", city:"Brazzaville", desc:"Téléphones, accessoires et petit électroménager.", plan:"Boutique Standard", wa:"242060000001", emoji:"📱", products:[{n:"Smartphone 64 Go",p:95000},{n:"Chargeur rapide",p:6500},{n:"Écouteurs Bluetooth",p:12000}] },
+    { id:"s2", name:"Mode Kongo", cat:"Vêtements", city:"Pointe-Noire", desc:"Prêt-à-porter et tissus wax.", plan:"Boutique Premium", wa:"242060000002", emoji:"👗", products:[{n:"Robe wax",p:18000},{n:"Chemise pagne",p:15000},{n:"Sandales cuir",p:9000}] },
+    { id:"s3", name:"Saveurs du Pool", cat:"Alimentation", city:"Kinkala", desc:"Produits locaux : manioc, arachides, miel.", plan:"Boutique Découverte", wa:"242060000003", emoji:"🌽", products:[{n:"Miel 1 L",p:5000},{n:"Arachides 1 kg",p:2500}] },
+    { id:"s4", name:"Info Plus", cat:"Informatique", city:"Brazzaville", desc:"Ordinateurs, imprimantes, réparation.", plan:"Boutique Professionnelle", wa:"242060000004", emoji:"💻", products:[{n:"Ordinateur portable",p:240000},{n:"Imprimante",p:85000}] }
+  ],
+  market: [
+    { id:"m1", title:"Téléphone d'occasion en bon état", cat:"Téléphones", city:"Brazzaville", price:45000, desc:"Écran intact, batterie correcte, chargeur inclus.", emoji:"📱" },
+    { id:"m2", title:"Canapé 3 places", cat:"Meubles", city:"Pointe-Noire", price:120000, desc:"Tissu gris, très bon état.", emoji:"🛋️" },
+    { id:"m3", title:"Toyota Corolla 2008", cat:"Véhicules", city:"Dolisie", price:3200000, desc:"Essence, manuelle, papiers à jour.", emoji:"🚗" },
+    { id:"m4", title:"Ordinateur portable 15\"", cat:"Ordinateurs", city:"Brazzaville", price:150000, desc:"8 Go RAM, SSD 256 Go.", emoji:"💻" },
+    { id:"m5", title:"Sacs de manioc (lot de 10)", cat:"Alimentation", city:"Owando", price:35000, desc:"Livraison possible en ville.", emoji:"🌽" },
+    { id:"m6", title:"Robes de soirée", cat:"Vêtements", city:"Brazzaville", price:20000, desc:"Plusieurs tailles disponibles.", emoji:"👗" }
+  ],
+  jobs: [
+    { id:"j1", title:"Comptable", cat:"Finance", city:"Brazzaville", price:0, desc:"Entreprise de BTP recherche comptable (3 ans d'expérience). CDI.", emoji:"📊", org:"Entreprise exemple" },
+    { id:"j2", title:"Développeur web junior", cat:"Informatique", city:"Pointe-Noire", price:0, desc:"HTML, CSS, JavaScript. Contrat de 6 mois renouvelable.", emoji:"👨‍💻", org:"Studio exemple" },
+    { id:"j3", title:"Enseignant du primaire", cat:"Éducation", city:"Dolisie", price:0, desc:"École privée, licence ou équivalent demandée.", emoji:"🎓", org:"École exemple" },
+    { id:"j4", title:"Chauffeur-livreur", cat:"Transport", city:"Brazzaville", price:0, desc:"Permis B exigé, bonne connaissance de la ville.", emoji:"🚚", org:"Commerce exemple" }
+  ],
+  realestate: [
+    { id:"r1", title:"Appartement 3 pièces – Poto-Poto", cat:"Location", city:"Brazzaville", price:250000, desc:"Par mois. Eau et électricité, cour sécurisée.", emoji:"🏢" },
+    { id:"r2", title:"Terrain 600 m² – Nkombo", cat:"Terrain", city:"Brazzaville", price:8000000, desc:"Titre en cours de régularisation, à vérifier avant achat.", emoji:"🏞️" },
+    { id:"r3", title:"Local commercial – centre-ville", cat:"Local commercial", city:"Pointe-Noire", price:400000, desc:"Par mois. 40 m², vitrine sur rue.", emoji:"🏪" },
+    { id:"r4", title:"Maison 4 chambres à vendre", cat:"Vente", city:"Dolisie", price:28000000, desc:"Clôturée, forage, dépendance.", emoji:"🏡" }
+  ],
+  pros: [
+    { id:"p1", title:"Électricien bâtiment", cat:"Électricien", city:"Brazzaville", price:5000, desc:"Installations, dépannages. Tarif indicatif à partir de / intervention.", emoji:"💡" },
+    { id:"p2", title:"Plombier", cat:"Plombier", city:"Pointe-Noire", price:4000, desc:"Fuites, sanitaires, chauffe-eau.", emoji:"🔧" },
+    { id:"p3", title:"Photographe événementiel", cat:"Photographe", city:"Brazzaville", price:50000, desc:"Mariages, baptêmes, entreprises.", emoji:"📷" },
+    { id:"p4", title:"Développeur web & mobile", cat:"Développeur", city:"Brazzaville", price:150000, desc:"Sites vitrines, applications de gestion.", emoji:"💻" }
+  ],
+  training: [
+    { id:"f1", title:"Excel du débutant à l'avancé", cat:"Bureautique", city:"En ligne", price:15000, desc:"Formules, tableaux croisés, graphiques.", emoji:"📗" },
+    { id:"f2", title:"Initiation à la programmation web", cat:"Programmation", city:"En ligne", price:25000, desc:"HTML, CSS et JavaScript par projets.", emoji:"🧑‍💻" },
+    { id:"f3", title:"Comptabilité pour petits commerces", cat:"Comptabilité", city:"Brazzaville", price:20000, desc:"Tenue des comptes et gestion de trésorerie.", emoji:"🧾" },
+    { id:"f4", title:"Entrepreneuriat : monter son projet", cat:"Entrepreneuriat", city:"En ligne", price:10000, desc:"Étude de marché, budget, financement.", emoji:"🚀" }
+  ],
+  transport: [
+    { id:"t1", title:"Transport Brazzaville ↔ Pointe-Noire", cat:"Transport de personnes", city:"Brazzaville", price:25000, desc:"Départs réguliers. Tarif indicatif par personne.", emoji:"🚌" },
+    { id:"t2", title:"Livraison de colis en ville", cat:"Livraison", city:"Brazzaville", price:2000, desc:"Moto-livreur. Tarif indicatif à partir de.", emoji:"🛵" },
+    { id:"t3", title:"Camion de déménagement", cat:"Transport de marchandises", city:"Pointe-Noire", price:80000, desc:"Camion 3 tonnes avec manutentionnaires.", emoji:"🚛" }
+  ],
+  opps: [
+    { id:"o1", title:"Bourse d'excellence – exemple", cat:"Bourse", city:"International", price:0, desc:"Date limite : à vérifier sur le site officiel. Conditions et documents listés par l'organisme.", emoji:"🎓" },
+    { id:"o2", title:"Stage de fin d'études – exemple", cat:"Stage", city:"Brazzaville", price:0, desc:"Trois mois, ouvert aux étudiants en gestion.", emoji:"🧑‍💼" },
+    { id:"o3", title:"Concours d'entrepreneuriat – exemple", cat:"Concours", city:"Pointe-Noire", price:0, desc:"Appel à candidatures pour jeunes porteurs de projet.", emoji:"🏆" }
+  ],
+  community: [
+    { id:"c1", title:"Journée de nettoyage du quartier", cat:"Événement", city:"Brazzaville", price:0, desc:"Rendez-vous samedi matin avec gants et sacs.", emoji:"🧹" },
+    { id:"c2", title:"Perdu : clés avec porte-clés bleu", cat:"Annonce utile", city:"Pointe-Noire", price:0, desc:"Perdues près du marché central. Contactez-moi.", emoji:"🔑" }
+  ]
+};
+const MODS = {
+  market:    { path:"annonces",    title:"Petites annonces",           icon:"🛍️", sub:"Achetez et vendez téléphones, véhicules, meubles, vêtements et plus.", cats:["Téléphones","Ordinateurs","Vêtements","Meubles","Véhicules","Accessoires","Équipements","Alimentation","Autres"], action:null, priceLabel:"Prix (FCFA)" },
+  jobs:      { path:"emploi",      title:"Emploi & recrutement",       icon:"💼", sub:"Offres, candidatures et profils professionnels.", cats:["Informatique","Finance","Éducation","Transport","Commerce","BTP","Santé","Administration","Autres"], action:"Postuler", priceLabel:null },
+  realestate:{ path:"immobilier",  title:"Immobilier",                 icon:"🏠", sub:"Maisons, appartements, terrains, bureaux et locaux commerciaux.", cats:["Location","Vente","Terrain","Bureau","Local commercial"], action:null, priceLabel:"Prix / loyer (FCFA)" },
+  pros:      { path:"services",    title:"Services professionnels",    icon:"🛠️", sub:"Annuaire des professionnels près de chez vous.", cats:["Électricien","Plombier","Mécanicien","Informaticien","Développeur","Maçon","Menuisier","Peintre","Enseignant","Photographe","Infographiste","Réparateur","Autre"], action:"Contacter", priceLabel:"Tarif indicatif (FCFA)" },
+  training:  { path:"formations",  title:"Formations & éducation",     icon:"📚", sub:"Cours en ligne et formations professionnelles.", cats:["Informatique","Bureautique","Comptabilité","Entrepreneuriat","Langues","Marketing","Programmation","Métiers techniques"], action:"S'inscrire", priceLabel:"Tarif (FCFA)" },
+  transport: { path:"transport",   title:"Transport & livraison",      icon:"🚚", sub:"Mise en relation avec chauffeurs, transporteurs et livreurs.", cats:["Transport de personnes","Transport de marchandises","Livraison","Déménagement"], action:"Faire une demande", priceLabel:"Tarif indicatif (FCFA)" },
+  opps:      { path:"opportunites",title:"Bourses, stages & opportunités",icon:"🎯", sub:"Bourses, concours, stages et appels à candidatures.", cats:["Bourse","Concours","Stage","Appel à candidatures","Formation","Accompagnement"], action:"Je suis intéressé", priceLabel:null },
+  community: { path:"communaute",  title:"Communauté",                 icon:"🤝", sub:"Annonces utiles, événements et échanges entre membres.", cats:["Événement","Annonce utile","Actualité pratique","Entraide"], action:null, priceLabel:null }
+  ,rental:   { path:"location-vehicules", title:"Location de véhicules", icon:"🚗", sub:"Voitures, 4x4, minibus et camions à louer, avec ou sans chauffeur.", cats:["Citadine","Berline","4x4 / SUV","Minibus / Bus","Pick-up / Camion","Moto","Avec chauffeur"], action:"Réserver / Contacter", priceLabel:"Tarif / jour (FCFA)" }
+};
+const modByPath = p => Object.keys(MODS).find(k => MODS[k].path === p);
+const ROLE_MODS = { particulier:["market","realestate","community"], commercant:["market"], entreprise:["jobs","market","opps"], demandeur:["community"], recruteur:["jobs"], prestataire:["pros","transport"], formateur:["training"], admin:Object.keys(MODS) };
+
+async function loadList(mod) {
+  if (BACKEND) { const d = await api("/api/" + mod); return d.items || []; }
+  const mine = (S.local.items[mod] || []).map(i => ({ ...i, local:true }));
+  return [...mine, ...SAMPLE[mod].map(i => ({ ...i, sample:true }))];
+}
+async function loadShops() {
+  if (BACKEND) { const d = await api("/api/shops"); return d.items || []; }
+  const mine = S.local.shops.filter(s => s.status === "active").map(s => ({ ...s, local:true }));
+  return [...mine, ...SAMPLE.shops.map(s => ({ ...s, sample:true }))];
+}
+
+/* ==========================================================================
+   5. COMPOSANTS DE RENDU
+   ========================================================================== */
+function itemCard(mod, it) {
+  const M = MODS[mod], fav = S.favs.includes(mod + ":" + it.id);
+  const tag = it.sample ? '<span class="badge gold">Exemple</span>' : it.local ? '<span class="badge warn">Brouillon local</span>' : "";
+  const proTag = it.pro ? '<span class="badge gold">✔ Pro</span>' : "";
+  return `<article class="card item${it.sold ? " soldc" : ""}">
+    <div class="ph" ${it.photo ? "" : 'aria-hidden="true"'}>${it.photo ? `<img src="${esc(it.photo)}" alt="${esc(it.title)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover;border-radius:12px">` : esc(it.emoji || M.icon)}</div>
+    <div class="meta"><span class="badge">${esc(it.cat)}</span><span class="badge">📍 ${esc(it.city)}</span>${typeof proTag !== "undefined" ? proTag : ""}${SOLD_MODS.includes(mod) ? (it.sold ? '<span class="badge bad">🔴 Vendu</span>' : '<span class="badge ok">🟢 Disponible</span>') : ""}${tag}</div>
+    <h3>${esc(it.title)}</h3>
+    ${it.price ? `<div class="price">${money(it.price)}</div>` : ""}
+    <p class="muted" style="font-size:.88rem">${esc((it.desc || "").slice(0, 90))}${(it.desc || "").length > 90 ? "…" : ""}</p>
+    ${contactBlock(it.contact, null, it.address)}
+    <div class="btns">
+      <button class="btn blue sm" data-act="detail" data-mod="${mod}" data-id="${esc(it.id)}">Détails</button>
+      <button class="btn line sm fav ${fav ? "on" : ""}" data-act="fav" data-key="${mod}:${esc(it.id)}" aria-pressed="${fav}">${fav ? "♥" : "♡"}</button>
+      <button class="btn line sm" data-act="report" data-mod="${mod}" data-id="${esc(it.id)}" title="Signaler">⚑</button>
+    </div>
+  </article>`;
+}
+
+/* ==========================================================================
+   5b. VENDU / STOCK, CONTACTS, ESPACE PUBLICITAIRE
+   ========================================================================== */
+const SOLD_MODS = ["market", "realestate"];
+const waDigits = n => { const raw = String(n || ""), d = raw.replace(/\D/g, ""); if (!d) return ""; if (raw.trim().startsWith("+") || d.length >= 11) return d; return "242" + d; };
+const telLink = n => { const d = String(n || "").replace(/[^\d+]/g, ""); return d ? `<a href="tel:${esc(d)}"><b>${esc(n)}</b></a>` : ""; };
+function contactBlock(phone, city, address) {
+  const loc = [city, address].filter(Boolean).map(esc).join(" — ");
+  return (phone || loc) ? `<div class="cinfo">${phone ? `<div>📞 ${telLink(phone)}</div>` : ""}${loc ? `<div>📍 ${loc}</div>` : ""}</div>` : "";
+}
+function productCard(p, s) {
+  const phone = p.phone || (s.wa ? "+" + s.wa : ""), city = p.city || s.city, wd = waDigits(phone);
+  return `<div class="card item${p.sold ? " soldc" : ""}"><div class="ph">${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.n)}" loading="lazy" decoding="async" style="width:100%;height:100%;object-fit:cover">` : "🛒"}</div>
+    <div class="meta">${p.sold ? '<span class="badge bad">🔴 Produit vendu</span>' : '<span class="badge ok">🟢 En stock</span>'}</div>
+    <h3>${esc(p.n)}</h3><div class="price">${money(p.p)}</div>${contactBlock(phone, city, p.address)}
+    ${wd && !p.sold ? `<a class="btn green sm" target="_blank" rel="noopener" href="https://wa.me/${wd}?text=${encodeURIComponent("Bonjour, je suis intéressé par : " + p.n + " (DigiZORA)")}">WhatsApp</a>` : ""}</div>`;
+}
+async function loadAds() { if (!BACKEND) return []; try { return (await api("/api/ads/active")).items || []; } catch { return []; } }
+const adMinPrice = () => Math.min(...(settings().adPlans || DEFAULT_SETTINGS.adPlans).map(p => p.price));
+function adBanner(ads) {
+  const cta = `<a class="adlink" href="#/publicite">📢 Louer cet espace publicitaire dès ${money(adMinPrice())} / jour</a>`;
+  if (!ads.length) return `<div class="adwrap"><a class="ad adempty" href="#/publicite"><b>📢 Espace publicitaire disponible</b><p>Faites connaître votre activité : image ou vidéo, dès ${money(adMinPrice())} par jour. <u>Voir les tarifs</u></p></a></div>`;
+  const slide = (a, i) => {
+    const media = a.type === "video" ? `<video src="${esc(a.media)}" muted loop playsinline preload="metadata" ${i ? "" : "autoplay"}></video>` : `<img src="${esc(a.media)}" alt="${esc(a.title)}" loading="lazy">`;
+    const inner = `${media}<div class="adcap">${esc(a.title)}</div>`;
+    return a.link ? `<a class="adslide${i ? "" : " on"}" href="${esc(a.link)}" target="_blank" rel="noopener sponsored" data-act="adClick" data-id="${esc(a.id)}">${inner}</a>` : `<div class="adslide${i ? "" : " on"}">${inner}</div>`;
+  };
+  return `<div class="adwrap"><div class="adrot"><span class="adtag">Publicité</span>${ads.map(slide).join("")}</div>${cta}</div>`;
+}
+setInterval(() => { $$(".adrot").forEach(r => { const sl = $$(".adslide", r); if (sl.length < 1) return; let i = sl.findIndex(x => x.classList.contains("on")); if (sl.length > 1) { sl[i].classList.remove("on"); i = (i + 1) % sl.length; sl[i].classList.add("on"); } sl.forEach((x, j) => { const v = $("video", x); if (v) j === i ? v.play().catch(() => {}) : v.pause(); }); }); }, 6000);
+const AD_ST = { pending:["warn", "En attente de paiement / validation"], active:["ok", "En ligne"], expired:["bad", "Terminée"], rejected:["bad", "Refusée"] };
+function adCard(a, adm) {
+  const st = AD_ST[a.status] || ["", a.status];
+  return `<div class="card"><div class="adthumb">${a.type === "video" ? `<video src="${esc(a.media)}" muted playsinline preload="metadata"></video>` : `<img src="${esc(a.media)}" alt="">`}</div>
+    <span class="badge ${st[0]}">${st[1]}</span> <span class="badge">${esc(a.label)}</span><h3 style="margin:6px 0">${esc(a.title)}</h3>
+    ${adm ? `<p class="muted" style="font-size:.82rem">Par ${esc(a.userName)}</p>` : ""}
+    <p class="muted" style="font-size:.82rem">${a.expires ? "Du " + fdate(a.starts) + " au " + fdate(a.expires) : "Pas encore diffusée"} • ${a.clicks} clic(s) • ${money(a.amount)}</p>
+    <div class="row" style="margin-top:8px">${!adm && ["expired", "rejected"].includes(a.status) ? `<button class="btn gold sm" data-act="adRenew" data-id="${esc(a.id)}">Renouveler</button>` : ""}<button class="btn red sm" data-act="adDelete" data-id="${esc(a.id)}">${adm ? "Retirer" : "Supprimer"}</button></div></div>`;
+}
+
+function pager(total, page, key) {
+  const n = Math.ceil(total / CONFIG.PAGE_SIZE); if (n <= 1) return "";
+  return `<div class="pager">${Array.from({ length:n }, (_, i) => `<button class="${i + 1 === page ? "on" : ""}" data-act="page" data-key="${key}" data-p="${i + 1}">${i + 1}</button>`).join("")}</div>`;
+}
+const emptyBox = (ic, t, sub = "") => `<div class="empty"><div class="ic">${ic}</div><b>${t}</b><p>${sub}</p></div>`;
+const pageHead = (t, sub) => `<section class="pagehead"><div class="wrap"><h1 class="t">${t}</h1><p>${sub}</p></div></section>`;
+const field = (id, label, type = "text", extra = "") => `<div class="f"><label for="${id}">${label}</label><input id="${id}" name="${id}" type="${type}" ${extra}><div class="err" data-err="${id}"></div></div>`;
+const selectF = (id, label, opts, ph) => `<div class="f"><label for="${id}">${label}</label><select id="${id}" name="${id}">${ph ? `<option value="">${ph}</option>` : ""}${opts.map(o => `<option>${esc(o)}</option>`).join("")}</select><div class="err" data-err="${id}"></div></div>`;
+const isLogged = () => !!S.user;
+function needLogin(msg) {
+  toast(msg || "Connectez-vous pour continuer.", "bad");
+  sessionStorage.setItem("dc_back", location.hash || "#/");
+  location.hash = "#/connexion";
+}
+
+/* ==========================================================================
+   6. PAGES
+   ========================================================================== */
+const pages = {};
+
+/* ---- Accueil ---- */
+pages.home = async () => {
+  const ads = await loadAds();
+  const [shops, jobs, market, pros, train, opps] = await Promise.all(["shops"].map(() => loadShops()).concat(["jobs","market","pros","training","opps"].map(loadList)));
+  const services = [
+    ["🏬","Boutiques","Louez votre boutique numérique","#/boutiques"], ["💼","Emploi","Offres et candidatures","#/emploi"], ["🛍️","Annonces","Achetez et vendez","#/annonces"],
+    ["🏠","Immobilier","Location et vente","#/immobilier"], ["🛠️","Services","Artisans et experts","#/services"], ["📚","Formations","Apprenez et progressez","#/formations"],
+    ["🚚","Transport","Chauffeurs et livreurs","#/transport"], ["🚗","Location auto","Voitures et minibus","#/location-vehicules"]
+  ];
+  return `
+  <section class="hero"><div class="wrap in">
+    <div>
+      <span class="badge gold">Le numérique sans frontières</span>
+      <h1 style="margin-top:12px">Vendez, achetez, <span>développez votre activité</span> sans frontières.</h1>
+      <p class="lead">Boutiques en ligne avec livraison, immobilier, transport, location de véhicules, emploi et services : tout DigiZORA, au même endroit.</p>
+      <div class="cta">
+        <a class="btn gold" href="#/boutiques">🛍️ Découvrir les boutiques</a>
+        <a class="btn line" style="color:#fff" href="#/inscription">Ouvrir ma boutique</a>
+      </div>
+      <div class="stats"><div><b>4 formules</b>de Basique à VIP</div><div><b>Commande libre</b>sans créer de compte</div><div><b>Livraison</b>fixée par chaque vendeur</div></div>
+    </div>
+    <div class="stage" id="stage" aria-hidden="true"><div class="scene" id="scene">
+      <div class="fc"><div class="e">🛍️</div><b>Boutiques</b></div><div class="fc"><div class="e">🚚</div><b>Livraison</b></div>
+      <div class="fc"><div class="e">🏠</div><b>Immobilier</b></div><div class="fc"><div class="e">🚗</div><b>Location auto</b></div>
+      <div class="logocard"><img src="/logo.png" alt="" ></div>
+    </div></div>
+  </div></section>
+  <div class="wrap">
+    <h2 class="t">Nos services</h2>
+    <div class="grid g4">${services.map(s => `<a class="card svc" href="${s[3]}"><span class="e">${s[0]}</span><h3>${s[1]}</h3><p>${s[2]}</p></a>`).join("")}</div>
+
+    <h2 class="t">Catégories populaires</h2>
+    <div class="chips">${["Téléphones","Vêtements","Véhicules","Informatique","Alimentation","Immobilier","BTP","Éducation"].map(c => `<a class="chip" href="#/recherche/${encodeURIComponent(c)}">${esc(c)}</a>`).join("")}</div>
+
+    ${shops.filter(s => shopTier(s) === 3).length ? `<div class="vipband"><h2 class="t" style="color:#ffd36b">👑 Boutiques VIP</h2><div class="grid g4">${shops.filter(s => shopTier(s) === 3).slice(0, 4).map(shopCard).join("")}</div></div>` : ""}
+    <h2 class="t">Comment commander ?</h2>
+    <div class="steps"><div class="stepc"><div class="e">🔎</div><b>1. Parcourez</b><p class="muted">Consultez librement toutes les boutiques et produits.</p></div><div class="stepc"><div class="e">🛒</div><b>2. Commandez</b><p class="muted">Cliquez sur « Commander » : nom, téléphone, adresse.</p></div><div class="stepc"><div class="e">📞</div><b>3. Confirmation</b><p class="muted">Le vendeur vous appelle pour confirmer.</p></div><div class="stepc"><div class="e">🚚</div><b>4. Livraison</b><p class="muted">Recevez votre commande, frais de livraison affichés d'avance.</p></div></div>
+    <h2 class="t">Boutiques recommandées <small><a href="#/boutiques">Tout voir →</a></small></h2>
+    <div class="grid g4">${shops.slice(0, 4).map(shopCard).join("")}</div>
+
+    <div style="margin-top:26px">${adBanner(ads)}</div>
+
+    <div class="promoband"><div><h3>Vous êtes professionnel ?</h3><p>Immobilier, transport, location de véhicules ou services : ouvrez un compte pro DigiZORA et soyez mis en avant.</p></div><a class="btn gold" href="#/comptes-pro">Découvrir les comptes pro →</a></div>
+    <h2 class="t">Dernières annonces <small><a href="#/annonces">Voir plus →</a></small></h2>
+    <div class="grid g3">${market.slice(0, 3).map(i => itemCard("market", i)).join("")}</div>
+    <h2 class="t">Offres d'emploi <small><a href="#/emploi">Voir plus →</a></small></h2>
+    <div class="grid g3">${jobs.slice(0, 3).map(i => itemCard("jobs", i)).join("")}</div>
+    <h2 class="t">Professionnels à découvrir <small><a href="#/services">Voir plus →</a></small></h2>
+    <div class="grid g3">${pros.slice(0, 3).map(i => itemCard("pros", i)).join("")}</div>
+    <h2 class="t">Formations <small><a href="#/formations">Voir plus →</a></small></h2>
+    <div class="grid g3">${train.slice(0, 3).map(i => itemCard("training", i)).join("")}</div>
+    <h2 class="t">Opportunités <small><a href="#/opportunites">Voir plus →</a></small></h2>
+    <div class="grid g3">${opps.slice(0, 3).map(i => itemCard("opps", i)).join("")}</div>
+    ${BACKEND ? "" : `<p class="notice" style="margin-top:26px">Mode aperçu : les éléments marqués « Exemple » illustrent la mise en page. Les vraies données apparaîtront dès que le backend sera connecté (voir GUIDE-BACKEND.md).</p>`}
+  </div>`;
+};
+pages.home.after = () => {
+  const st = $("#stage"), sc = $("#scene"); if (!st) return;
+  st.addEventListener("pointermove", e => { const r = st.getBoundingClientRect(); const x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; sc.style.transform = `rotateY(${x * 18}deg) rotateX(${-y * 18}deg)`; });
+  st.addEventListener("pointerleave", () => sc.style.transform = "");
+};
+
+function shopStatus(s) { if (s.status === "suspended") return "suspended"; if (s.expires && s.expires < Date.now()) return "expired"; return "active"; }
+function shopCard(s) {
+  const tag = s.sample ? '<span class="badge gold">Exemple</span>' : "";
+  return `<a class="card item" href="#/boutique/${esc(s.id)}"><div class="ph" aria-hidden="true">${esc(s.emoji || "🏬")}</div>
+    <div class="meta"><span class="badge">${esc(s.cat)}</span><span class="badge">📍 ${esc(s.city)}</span>${tag}</div>
+    <h3>${esc(s.name)}</h3><p class="muted" style="font-size:.88rem">${esc(s.desc || "")}</p></a>`;
+}
+
+/* ---- Boutiques : liste + formules ---- */
+pages.boutiques = async () => {
+  const shops = await loadShops(), st = settings(), ads = await loadAds();
+  return pageHead("Centre commercial virtuel", "Louez votre boutique numérique et vendez à tout le pays. Activation après validation de votre paiement par l'administration.") + `
+  <div class="wrap">
+    ${adBanner(ads)}
+    <h2 class="t">Formules de location</h2>
+    <div class="filters"><label style="flex:none;align-self:center">Durée :</label>
+      <select id="durSel">${st.durations.map(d => `<option value="${d.id}">${d.label}${d.discount ? ` (−${d.discount} %)` : ""}</option>`).join("")}</select></div>
+    <div class="grid g4" id="plans">${planCards(st, st.durations[0])}</div>
+    <p class="muted" style="margin-top:10px;font-size:.85rem">Tarifs initiaux, modifiables par l'administration. La location est activée uniquement après vérification et validation du paiement.</p>
+    <h2 class="t">Boutiques actives</h2>
+    <div class="filters"><input id="shopq" type="search" placeholder="Rechercher une boutique…"><select id="shopc"><option value="">Toutes catégories</option>${[...new Set(shops.map(s => s.cat))].map(c => `<option>${esc(c)}</option>`).join("")}</select></div>
+    <div class="grid g4" id="shoplist">${shops.map(shopCard).join("")}</div>
+  </div>`;
+};
+function planCards(st, dur) {
+  return st.plans.map((p, i) => {
+    const total = p.price * dur.months * (1 - dur.discount / 100);
+    return `<div class="card plan ${i === 2 ? "pop" : ""}">${i === 2 ? '<span class="badge gold">Populaire</span>' : ""}<h3>${esc(p.name)}</h3>
+      <div class="pr">${money(total)}</div><div class="muted" style="font-size:.8rem">pour ${dur.months} mois (${money(p.price)}/mois${dur.discount ? `, −${dur.discount} %` : ""})</div>
+      <ul>${p.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+      <button class="btn blue" data-act="rentShop" data-plan="${p.id}" data-dur="${dur.id}">Demander cette boutique</button></div>`;
+  }).join("");
+}
+pages.boutiques.after = async () => {
+  $("#durSel")?.addEventListener("change", e => { const st = settings(); $("#plans").innerHTML = planCards(st, st.durations.find(d => d.id === e.target.value)); });
+  const shops = await loadShops();
+  const f = () => { const q = $("#shopq").value.toLowerCase(), c = $("#shopc").value; const r = shops.filter(s => (!c || s.cat === c) && (!q || (s.name + s.desc).toLowerCase().includes(q))); $("#shoplist").innerHTML = r.length ? r.map(shopCard).join("") : emptyBox("🔎", "Aucune boutique trouvée"); };
+  $("#shopq").addEventListener("input", f); $("#shopc").addEventListener("change", f);
+};
+
+/* ---- Boutique publique ---- */
+pages.boutique = async id => {
+  const shops = await loadShops(); const s = shops.find(x => String(x.id) === id);
+  if (!s) return `<div class="wrap" style="padding-top:30px">${emptyBox("🏬", "Boutique introuvable", '<a class="btn blue sm" href="#/boutiques">Retour aux boutiques</a>')}</div>`;
+  const prods = s.products || (S.local.items["prod_" + s.id] || []).map(p => ({ id:p.id, n:p.title, p:p.price, photo:p.photo, sold:p.sold, phone:p.phone, city:p.city, address:p.address }));
+  return `<section class="pagehead"><div class="wrap"><span class="badge gold">${esc(s.plan || "Boutique")}</span><h1 class="t" style="margin-top:8px">${esc(s.emoji || "🏬")} ${esc(s.name)}</h1><p>${esc(s.desc || "")} • 📍 ${esc(s.city)}</p></div></section>
+  <div class="wrap">
+    <div class="row" style="margin-bottom:16px">${s.wa ? `<a class="btn green" target="_blank" rel="noopener" href="https://wa.me/${esc(s.wa)}?text=${encodeURIComponent("Bonjour, je vous contacte depuis votre boutique DigiZORA.")}">Contacter sur WhatsApp</a>` : ""}<button class="btn line" style="color:var(--blue)" data-act="copyLink">🔗 Copier le lien de la boutique</button></div>
+    ${s.sample ? '<p class="notice">Boutique d\'exemple (mode aperçu).</p>' : ""}
+    <h2 class="t">Catalogue</h2>
+    ${prods.length ? `<div class="grid g4">${prods.map(p => productCard(p, s)).join("")}</div>` : emptyBox("🛒", "Aucun produit pour l'instant")}
+  </div>`;
+};
+
+
+/* ---- Espace publicitaire à louer ---- */
+pages.publicite = async () => {
+  const plans = settings().adPlans || DEFAULT_SETTINGS.adPlans, ads = await loadAds();
+  return pageHead("📢 Espace publicitaire", "Faites connaître votre activité : votre image ou votre vidéo est affichée en haut des pages principales de DigiZORA.") + `<div class="wrap">
+    <h2 class="t" style="margin-top:0">Aperçu de l'espace</h2>${adBanner(ads)}
+    <h2 class="t">Tarifs de location</h2>
+    <div class="grid g4">${plans.map(p => `<div class="card" style="text-align:center"><h3>${esc(p.label)}</h3><div class="price" style="font-size:1.5rem;font-weight:900;color:var(--blue);margin:8px 0">${money(p.price)}</div><button class="btn gold sm" data-act="adRent" data-plan="${esc(p.id)}">Choisir</button></div>`).join("")}</div>
+    <h2 class="t">Comment ça marche ?</h2>
+    <div class="card"><ol style="padding-left:20px;line-height:1.9"><li>Choisissez la durée de diffusion.</li><li>Envoyez votre image ou votre vidéo (affiche, spot, présentation de produit…), avec un lien ou un numéro WhatsApp facultatif.</li><li>Réglez le paiement (WhatsApp / Mobile Money) et envoyez la preuve.</li><li>Après validation par l'administration, votre publicité est diffusée immédiatement pour la durée choisie.</li></ol>
+    <p class="notice" style="margin-top:10px">Les contenus illégaux, trompeurs ou choquants sont refusés. Suivez le nombre de clics dans votre espace, rubrique « Publicités ».</p></div></div>`;
+};
+
+/* ---- Pages de modules génériques ---- */
+const listState = {};
+async function modulePage(mod) {
+  const M = MODS[mod], items = await loadList(mod), ads = await loadAds();
+  listState[mod] = { items, page:1, q:"", cat:"", city:"", sort:"new" };
+  return pageHead(M.icon + " " + M.title, M.sub) + `<div class="wrap">
+    ${adBanner(ads)}
+    <div class="filters">
+      <input id="fq" type="search" placeholder="Rechercher…" aria-label="Rechercher">
+      <select id="fcat"><option value="">Toutes catégories</option>${M.cats.map(c => `<option>${esc(c)}</option>`).join("")}</select>
+      <select id="fcity"><option value="">Toutes villes</option>${CITIES.map(c => `<option>${c}</option>`).join("")}</select>
+      <select id="fsort"><option value="new">Récents</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option></select>
+      <button class="btn gold" data-act="publish" data-mod="${mod}">+ Publier</button>
+    </div>
+    <div id="mlist"></div></div>`;
+}
+function drawModule(mod) {
+  const s = listState[mod]; if (!s) return;
+  let r = s.items.filter(i => (!s.cat || i.cat === s.cat) && (!s.city || i.city === s.city) && (!s.q || (i.title + i.desc + i.cat).toLowerCase().includes(s.q)));
+  if (s.sort === "asc") r.sort((a, b) => (a.price || 0) - (b.price || 0)); if (s.sort === "desc") r.sort((a, b) => (b.price || 0) - (a.price || 0));
+  const slice = r.slice((s.page - 1) * CONFIG.PAGE_SIZE, s.page * CONFIG.PAGE_SIZE);
+  $("#mlist").innerHTML = r.length ? `<div class="grid g3">${slice.map(i => itemCard(mod, i)).join("")}</div>${pager(r.length, s.page, mod)}` : emptyBox("🔎", "Aucun résultat", "Modifiez vos filtres ou publiez la première annonce.");
+}
+function bindModule(mod) {
+  drawModule(mod); const s = listState[mod];
+  $("#fq").addEventListener("input", e => { s.q = e.target.value.toLowerCase(); s.page = 1; drawModule(mod); });
+  $("#fcat").addEventListener("change", e => { s.cat = e.target.value; s.page = 1; drawModule(mod); });
+  $("#fcity").addEventListener("change", e => { s.city = e.target.value; s.page = 1; drawModule(mod); });
+  $("#fsort").addEventListener("change", e => { s.sort = e.target.value; drawModule(mod); });
+}
+Object.keys(MODS).forEach(m => { pages["mod_" + m] = () => modulePage(m); pages["mod_" + m].after = () => bindModule(m); });
+
+/* ---- Recherche globale ---- */
+pages.recherche = async q => {
+  q = decodeURIComponent(q || "").toLowerCase();
+  const out = [];
+  for (const m of Object.keys(MODS)) (await loadList(m)).filter(i => (i.title + i.desc + i.cat + i.city).toLowerCase().includes(q)).forEach(i => out.push([m, i]));
+  const shops = (await loadShops()).filter(s => (s.name + s.desc + s.cat).toLowerCase().includes(q));
+  return pageHead("Résultats pour « " + esc(q) + " »", `${out.length + shops.length} résultat(s)`) + `<div class="wrap">
+    ${shops.length ? `<h2 class="t">Boutiques</h2><div class="grid g4">${shops.map(shopCard).join("")}</div>` : ""}
+    ${out.length ? `<h2 class="t">Annonces, emplois et services</h2><div class="grid g3">${out.slice(0, 30).map(([m, i]) => itemCard(m, i)).join("")}</div>` : ""}
+    ${!out.length && !shops.length ? emptyBox("🔎", "Aucun résultat", "Essayez un autre mot-clé.") : ""}</div>`;
+};
+
+/* ---- Authentification ---- */
+pages.connexion = () => `<div class="wrap" style="max-width:460px;padding-top:30px"><div class="card"><h1 class="t" style="font-size:1.6rem">Connexion</h1>
+  <form id="loginForm" novalidate style="margin-top:14px">${field("email", "E-mail ou téléphone", "text", 'autocomplete="username"')}${field("password", "Mot de passe", "password", 'autocomplete="current-password"')}
+  <button class="btn blue" style="width:100%" type="submit">Se connecter</button></form>
+  <p style="margin-top:12px;font-size:.9rem"><a href="#/mot-de-passe"><u>Mot de passe oublié ?</u></a> • <a href="#/inscription"><u>Créer un compte</u></a></p>
+  ${BACKEND ? "" : `<div class="notice" style="margin-top:14px">Backend non connecté : la connexion réelle est indisponible. Vous pouvez <button class="btn gold sm" data-act="previewLogin">explorer en mode aperçu</button></div>`}</div></div>`;
+pages.inscription = () => `<div class="wrap" style="max-width:560px;padding-top:30px"><div class="card"><h1 class="t" style="font-size:1.6rem">Créer un compte</h1>
+  <form id="regForm" novalidate style="margin-top:14px">
+    ${selectF("role", "Type de compte", Object.keys(ROLES).filter(r => r !== "admin").map(r => r), "Choisir…").replace(/<option>(\w+)<\/option>/g, (m, r) => `<option value="${r}">${ROLES[r] || r}</option>`)}
+    ${field("name", "Nom complet", "text", 'autocomplete="name"')}
+    <div class="row">${field("phone", "Téléphone (+242…)", "tel", 'autocomplete="tel"')}${field("email", "E-mail", "email", 'autocomplete="email"')}</div>
+    ${selectF("city", "Ville", CITIES, "Choisir…")}
+    ${field("password", "Mot de passe (8 caractères minimum)", "password", 'autocomplete="new-password"')}
+    <label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input type="checkbox" id="terms" style="width:auto;margin-top:4px;flex:none"><span>J'accepte les <a href="#/legal/terms"><u>conditions d'utilisation</u></a> et la <a href="#/legal/privacy"><u>politique de confidentialité</u></a>.</span></label><div class="err" data-err="terms"></div>
+    <button class="btn blue" style="width:100%;margin-top:10px" type="submit">Créer mon compte</button></form>
+  <p class="muted" style="font-size:.82rem;margin-top:10px">Un message de bienvenue vous est envoyé par e-mail (si renseigné) et sur WhatsApp. Votre mot de passe est haché côté serveur et n'est jamais conservé dans ce navigateur.</p>
+  ${BACKEND ? "" : `<div class="notice" style="margin-top:14px">Backend non connecté : aucun compte réel ne peut être créé. <button class="btn gold sm" data-act="previewLogin">Explorer en mode aperçu</button></div>`}</div></div>`;
+pages["mot-de-passe"] = () => `<div class="wrap" style="max-width:460px;padding-top:30px"><div class="card"><h1 class="t" style="font-size:1.6rem">Mot de passe oublié</h1>
+  <form id="forgotForm" novalidate style="margin-top:14px">${field("email", "E-mail ou téléphone")}<button class="btn blue" style="width:100%" type="submit">Envoyer le lien / code</button></form></div></div>`;
+
+/* ---- Pages légales ---- */
+const LEGAL = {
+  terms: ["Conditions d'utilisation", "<p>DigiZORA est une plateforme de mise en relation éditée par Nexus Solutions Group (Brazzaville, République du Congo). En créant un compte, vous acceptez de fournir des informations exactes et de respecter les lois congolaises en vigueur.</p><p>Les boutiques louées sont activées après vérification du paiement par l'administration. Une preuve de paiement envoyée n'est pas une confirmation. Le paiement d'une validation de compte demandeur d'emploi ne garantit jamais l'obtention d'un emploi.</p><p>DigiZORA n'est pas partie aux transactions entre utilisateurs et ne garantit pas la qualité des biens ou services proposés. Vérifiez toujours un bien, un titre foncier ou un recruteur avant tout paiement.</p><p><i>Texte à faire valider par un conseil juridique avant mise en production.</i></p>"],
+  privacy: ["Politique de confidentialité", "<p>Nous collectons uniquement les données nécessaires au fonctionnement du service : identité, contacts, contenus publiés, historique des demandes et paiements. Les mots de passe sont hachés côté serveur. Les données ne sont pas vendues.</p><p>Vous pouvez demander l'accès, la rectification ou la suppression de vos données via l'assistance WhatsApp ou votre tableau de bord. Le navigateur ne conserve que des préférences et brouillons non sensibles.</p><p><i>Texte à faire valider par un conseil juridique avant mise en production.</i></p>"],
+  moderation: ["Règles de modération", "<ul style='padding-left:20px'><li>Pas de contenu illégal, trompeur, haineux ou violent.</li><li>Pas de fausses annonces, ni d'usurpation d'identité.</li><li>Les offres d'emploi ne doivent jamais exiger de paiement du candidat en dehors des frais clairement affichés.</li><li>Tout contenu peut être signalé ; l'équipe examine les signalements et peut retirer une publication ou suspendre un compte.</li></ul>"]
+};
+pages.legal = k => { const L = LEGAL[k] || LEGAL.terms; return pageHead(L[0], "DigiZORA – Nexus Solutions Group") + `<div class="wrap"><div class="card" style="line-height:1.7">${L[1]}</div></div>`; };
+
+/* ---- Paiement : référence, instructions, preuve ---- */
+pages.paiement = async id => {
+  await syncAll();
+  const r = S.local.requests.find(x => x.id === id);
+  if (!isLogged()) return `<div class="wrap" style="padding-top:30px">${emptyBox("🔒", "Connectez-vous pour voir cette demande")}</div>`;
+  if (!r) return `<div class="wrap" style="padding-top:30px">${emptyBox("🧾", "Demande introuvable", '<a class="btn blue sm" href="#/tableau-de-bord">Mes demandes</a>')}</div>`;
+  const msg = `Bonjour DigiZORA, je souhaite payer : ${r.service}. Référence : ${r.ref}. Montant : ${money(r.amount)}. Nom : ${r.userName}.`;
+  return pageHead("Paiement – " + esc(r.service), "Référence " + esc(r.ref)) + `<div class="wrap" style="max-width:720px"><div class="card">
+    <div class="row"><div><div class="muted">Montant à régler</div><div class="price" style="font-size:1.8rem;font-weight:900;color:var(--blue)">${money(r.amount)}</div></div><div><div class="muted">Référence</div><b style="font-size:1.3rem">${esc(r.ref)}</b></div><div><div class="muted">Statut</div>${statusBadge(r.status)}</div></div>
+    <hr style="margin:16px 0;border:0;border-top:1px solid var(--line)">
+    <h3>A. Paiement manuel</h3>
+    <ol style="padding-left:20px;margin:8px 0;line-height:1.8"><li>Contactez l'assistance officielle sur WhatsApp au <b>${CONFIG.WHATSAPP_LABEL}</b> en indiquant la référence <b>${esc(r.ref)}</b>.</li><li>Suivez les instructions de paiement communiquées par l'administration.</li><li>Envoyez votre preuve de paiement ci-dessous.</li><li>L'administrateur vérifie, puis valide ou refuse la demande. Vous êtes notifié.</li></ol>
+    <p class="notice">Une preuve envoyée ne constitue jamais une confirmation de paiement. Le service n'est activé qu'après validation par l'administration.</p>
+    <div class="row" style="margin-top:12px"><a class="btn green" target="_blank" rel="noopener" href="${wa(msg)}">Contacter sur WhatsApp</a>
+    <label class="btn line" style="color:var(--blue);cursor:pointer">📎 Envoyer la preuve<input type="file" id="proofFile" accept="image/*,application/pdf" class="hide" data-req="${esc(r.id)}"></label></div>
+    ${r.proof ? `<p style="margin-top:8px" class="muted">Preuve enregistrée : ${esc(r.proof)}${BACKEND ? "" : " (non transmise : mode aperçu)"}</p>` : ""}
+    <hr style="margin:16px 0;border:0;border-top:1px solid var(--line)">
+    <h3>B. Paiement électronique (Mobile Money)</h3>
+    <p class="muted">Le paiement est traité par le serveur et confirmé par l'opérateur. Aucune transaction n'est simulée.</p>
+    <button class="btn blue" style="margin-top:8px" data-act="epay" data-id="${esc(r.id)}">Payer par Mobile Money</button>
+  </div></div>`;
+};
+const statusBadge = s => ({ pending:'<span class="badge warn">En attente de validation</span>', approved:'<span class="badge ok">Validé</span>', refused:'<span class="badge bad">Refusé</span>' }[s] || esc(s));
+
+/* ---- Tableau de bord utilisateur ---- */
+let dashTab = "overview";
+pages["tableau-de-bord"] = async () => {
+  await syncAll();
+  if (!isLogged()) return `<div class="wrap" style="padding-top:30px">${emptyBox("🔒", "Connectez-vous pour accéder à votre espace", '<a class="btn blue sm" href="#/connexion">Se connecter</a>')}</div>`;
+  const u = S.user, mods = myMods(u);
+  const tabs = [["overview","📊 Vue d'ensemble"], ["profile","👤 Profil"]];
+  if (["commercant","entreprise","particulier"].includes(u.role)) tabs.push(["shop","🏬 Ma boutique"], ["orders","📦 Commandes" + ((S.local.orders || []).some(o => o.status === "new") ? " ●" : "")]);
+  if (mods.length) tabs.push(["posts","📝 Mes publications"]);
+  if (["demandeur"].includes(u.role)) tabs.push(["jobprofile","🧑‍💼 Profil emploi"]);
+  tabs.push(["ads","📢 Publicités"]); if (u.role !== "admin") tabs.push(["pro","💼 Compte pro"]);
+  tabs.push(["apps", u.role === "recruteur" || u.role === "entreprise" ? "📥 Candidatures reçues" : "📄 Mes candidatures"], ["favs","♥ Favoris"], ["pay","💳 Paiements"], ["notifs","🔔 Notifications"], ["msgs","✉️ Messages"], ["claims","📣 Réclamations"]);
+  if (u.role === "admin") tabs.push(["admin", "⚙️ Administration"]);
+  return pageHead("Bonjour, " + esc(u.name), "Espace " + (ROLES[u.role] || "membre")) + `<div class="wrap"><div class="dash">
+    <aside class="side" id="dside">${tabs.map(t => t[0] === "admin" ? `<a href="#/admin">${t[1]}</a>` : `<button data-act="dtab" data-t="${t[0]}" class="${t[0] === dashTab ? "on" : ""}">${t[1]}</button>`).join("")}</aside>
+    <section id="dbody"></section></div></div>`;
+};
+pages["tableau-de-bord"].after = () => drawDash();
+function myItems() { const o = []; for (const m of Object.keys(MODS)) (S.local.items[m] || []).forEach(i => o.push([m, i])); return o; }
+function drawDash() {
+  const b = $("#dbody"); if (!b) return; const u = S.user, L = S.local;
+  const myReq = L.requests.filter(r => r.userId === u.id);
+  const note = BACKEND ? "" : '<p class="notice" style="margin-bottom:14px">Mode aperçu : ces données sont locales à cet appareil.</p>';
+  let h = note;
+  if (dashTab === "overview") {
+    h += `<div class="grid g4"><div class="kpi"><b>${myItems().length}</b><span>Publications</span></div><div class="kpi"><b>${S.favs.length}</b><span>Favoris</span></div><div class="kpi"><b>${myReq.length}</b><span>Demandes de paiement</span></div><div class="kpi"><b>${L.notifs.filter(n => !n.read).length}</b><span>Notifications non lues</span></div></div>`;
+    if (["commercant","entreprise"].includes(u.role)) { const exp = L.shops.filter(s => s.userId === u.id && s.expires && s.expires - Date.now() < 7 * DAY && s.expires > Date.now()); exp.forEach(s => h += `<p class="notice" style="margin-top:14px">⏰ Votre boutique « ${esc(s.name)} » expire le ${fdate(s.expires)}. <a href="#/boutiques"><u>Renouveler</u></a></p>`); }
+    { const nOrd = (L.orders || []).filter(o => o.status === "new").length; if (nOrd) h += `<p class="notice" style="margin-top:14px">📦 Vous avez <b>${nOrd}</b> nouvelle(s) commande(s). <button class="btn gold sm" data-act="dtab" data-t="orders">Voir les commandes</button></p>`; }
+    h += `<h2 class="t">Raccourcis</h2><div class="row">${myMods(u).map(m => `<button class="btn blue" data-act="publish" data-mod="${m}">+ ${MODS[m].title}</button>`).join("")}</div>`;
+  }
+  if (dashTab === "profile") h += `<div class="card"><div style="display:flex;gap:16px;align-items:center;margin-bottom:14px"><div class="avatar" id="av">${u.photo ? `<img src="${esc(u.photo)}" alt="Photo de profil" loading="lazy">` : esc(u.name[0] || "?")}</div><label class="btn line sm" style="color:var(--blue);cursor:pointer">Changer la photo<input type="file" id="photoFile" accept="image/png,image/jpeg,image/webp" class="hide"></label></div>
+    <form id="profForm" novalidate>${field("name", "Nom complet", "text", `value="${esc(u.name)}"`)}<div class="row">${field("phone", "Téléphone", "tel", `value="${esc(u.phone || "")}"`)}${field("email", "E-mail", "email", `value="${esc(u.email || "")}"`)}</div>${selectF("city", "Ville", CITIES).replace(`<option>${esc(u.city || "")}</option>`, `<option selected>${esc(u.city || "")}</option>`)}<button class="btn blue" type="submit">Enregistrer</button></form>
+    <p class="muted" style="margin-top:10px;font-size:.85rem">Type de compte : <b>${ROLES[u.role]}</b>. La vérification du compte est effectuée par l'administration.</p>${BACKEND ? `<hr style="margin:16px 0;border:0;border-top:1px solid var(--line)"><h3>Changer le mot de passe</h3><form id="pwForm" novalidate style="margin-top:10px">${field("current", "Mot de passe actuel", "password", 'autocomplete="current-password"')}${field("password", "Nouveau mot de passe (8 caractères min., lettres et chiffres)", "password", 'autocomplete="new-password"')}<button class="btn line" style="color:var(--blue)" type="submit">Changer le mot de passe</button></form>` : ""}</div>`;
+  if (dashTab === "shop") h += shopTabHtml(u, L);
+  if (dashTab === "orders") h += ordersTabHtml(L);
+  if (dashTab === "pro") h += proTabHtml(L);
+  if (dashTab === "posts") { const mine = myItems().filter(([m]) => myMods(u).includes(m));
+    h += `<div class="row" style="margin-bottom:14px">${myMods(u).map(m => `<button class="btn blue sm" data-act="publish" data-mod="${m}">+ ${MODS[m].title}</button>`).join("")}</div>` +
+      (mine.length ? `<div class="grid g3">${mine.map(([m, i]) => `<div class="card"><span class="badge">${MODS[m].title}</span><h3 style="margin:6px 0">${esc(i.title)}</h3><p class="muted" style="font-size:.85rem">${esc(i.city)} • ${esc(i.cat)}</p>${SOLD_MODS.includes(m) ? `<button class="btn line sm" style="margin-top:8px;color:var(--blue)" data-act="toggleSold" data-kind="item" data-mod="${m}" data-id="${esc(i.id)}" data-sold="${i.sold ? 1 : 0}">${i.sold ? "↩ Remettre en stock" : "✔ Marquer vendu"}</button> ` : ""}<button class="btn red sm" style="margin-top:8px" data-act="delItem" data-mod="${m}" data-id="${esc(i.id)}">Supprimer</button></div>`).join("")}</div>` : emptyBox("📝", "Aucune publication"));
+  }
+  if (dashTab === "jobprofile") h += `<div class="card"><h3>Profil professionnel</h3><form id="jpForm" novalidate style="margin-top:10px">${field("title", "Intitulé recherché", "text", `placeholder="Ex. Comptable" value="${esc(L.jobprofile?.title || "")}"`)}<div class="f"><label for="skills">Compétences</label><textarea id="skills" placeholder="Excel, comptabilité, anglais…">${esc(L.jobprofile?.skills || "")}</textarea></div><div class="f"><label for="exp">Expériences et diplômes</label><textarea id="exp">${esc(L.jobprofile?.exp || "")}</textarea></div><div class="f"><label for="cv">CV (PDF, ${CONFIG.MAX_FILE_MB} Mo max)${L.jobprofile?.cv_name ? " – actuel : " + esc(L.jobprofile.cv_name) : ""}</label><input id="cv" type="file" accept="application/pdf"></div><button class="btn blue" type="submit">Enregistrer</button></form>
+    <hr style="margin:16px 0;border:0;border-top:1px solid var(--line)"><h3>Validation de compte (facultative)</h3><p class="muted">Frais : ${money(settings().jobValidationFee)}. Cette validation ne garantit jamais l'obtention d'un emploi.</p><button class="btn gold" style="margin-top:8px" data-act="reqService" data-svc="Validation compte demandeur d'emploi" data-amt="${settings().jobValidationFee}">Demander la validation</button></div>`;
+  if (dashTab === "apps") { const a = L.apps.filter(x => x.userId === u.id); h += receivedTable(L); if (!a.length && (L.received || []).length) { } else h += a.length ? `<div class="tw"><table><tr><th>Date</th><th>Offre</th><th>Statut</th></tr>${a.map(x => `<tr><td>${fdate(x.t)}</td><td>${esc(x.title)}</td><td><span class="badge warn">Envoyée</span></td></tr>`).join("")}</table></div>` : emptyBox("📄", "Aucune candidature ni demande"); }
+  if (dashTab === "ads") { const A = L.ads || []; h += `<div class="row" style="margin-bottom:14px"><button class="btn gold sm" data-act="adRent">+ Louer l'espace publicitaire</button></div>` + (A.length ? `<div class="grid g3">${A.map(a => adCard(a, false)).join("")}</div>` : emptyBox("📢", "Aucune publicité", "Louez l'espace pour afficher votre image ou votre vidéo à tous les visiteurs.")); }
+  if (dashTab === "favs") { const f = S.favs; h += f.length ? `<div class="grid g3" id="favlist"><div class="skel"></div></div>` : emptyBox("♡", "Aucun favori", "Touchez ♡ sur une annonce pour la retrouver ici."); }
+  if (dashTab === "pay") h += myReq.length ? `<div class="tw"><table><tr><th>Date</th><th>Service</th><th>Référence</th><th>Montant</th><th>Statut</th><th></th></tr>${myReq.map(r => `<tr><td>${fdate(r.t)}</td><td>${esc(r.service)}</td><td>${esc(r.ref)}</td><td>${money(r.amount)}</td><td>${statusBadge(r.status)}</td><td><a class="btn blue sm" href="#/paiement/${esc(r.id)}">Ouvrir</a></td></tr>`).join("")}</table></div>` : emptyBox("💳", "Aucun paiement", "Vos demandes de boutique et services payants apparaîtront ici.");
+  if (dashTab === "notifs") h += L.notifs.length ? L.notifs.map(n => `<div class="card" style="margin-bottom:10px">${n.read ? "" : '<span class="badge gold">Nouveau</span> '}${esc(n.text)}<div class="muted" style="font-size:.8rem">${fdate(n.t)}</div></div>`).join("") + `<button class="btn line sm" style="color:var(--blue)" data-act="readAll">Tout marquer comme lu</button>` : emptyBox("🔔", "Aucune notification");
+  if (dashTab === "msgs") h += `<div class="card"><h3>Écrire à l'assistance DigiZORA</h3><form id="msgForm" novalidate style="margin-top:10px">${field("subject", "Sujet")}<div class="f"><label for="body">Message</label><textarea id="body"></textarea><div class="err" data-err="body"></div></div><button class="btn blue" type="submit">Envoyer</button></form></div>` + (L.msgs.filter(m => m.type === "msg").length ? `<h2 class="t">Envoyés</h2>${L.msgs.filter(m => m.type === "msg").map(m => `<div class="card" style="margin-bottom:10px"><b>${esc(m.subject)}</b><p>${esc(m.body)}</p><span class="muted">${fdate(m.t)}${BACKEND ? "" : " • non transmis (mode aperçu)"}</span></div>`).join("")}` : "");
+  if (dashTab === "claims") h += `<div class="card"><h3>Déposer une réclamation</h3><form id="claimForm" novalidate style="margin-top:10px">${field("subject", "Objet")}<div class="f"><label for="body">Détails</label><textarea id="body"></textarea><div class="err" data-err="body"></div></div><button class="btn blue" type="submit">Envoyer la réclamation</button></form></div>` + L.msgs.filter(m => m.type === "claim").map(m => `<div class="card" style="margin-top:10px"><b>${esc(m.subject)}</b> <span class="badge warn">Ouverte</span><p>${esc(m.body)}</p></div>`).join("");
+  b.innerHTML = h;
+  if (dashTab === "favs" && S.favs.length) loadFavs();
+}
+async function loadFavs() {
+  const out = [];
+  for (const k of S.favs) { const [m, id] = k.split(":"); if (!MODS[m]) continue; const it = (await loadList(m)).find(i => String(i.id) === id); if (it) out.push(itemCard(m, it)); }
+  const el = $("#favlist"); if (el) el.innerHTML = out.join("") || emptyBox("♡", "Favoris introuvables");
+}
+
+/* ---- Administration ---- */
+let adminTab = "stats";
+pages.admin = async () => {
+  await syncAll();
+  if (!isLogged() || S.user.role !== "admin") return `<div class="wrap" style="padding-top:30px">${emptyBox("🔒", "Accès réservé aux administrateurs", "Les droits sont contrôlés par le serveur. Ce contrôle d'interface n'est pas une protection suffisante en soi.")}</div>`;
+  const tabs = [["stats","📊 Statistiques"],["req","💳 Demandes & paiements"],["shops","🏬 Boutiques"],["users","👥 Utilisateurs"],["mod","🛡️ Modération"],["tariffs","💰 Tarifs & paramètres"],["ads","📢 Publicités"],["outbox","📨 Bienvenue"],["msgs","✉️ Messages & réclamations"],["audit","📜 Journal"]];
+  return pageHead("Administration générale", "Pilotage de la plateforme, validation des paiements et configuration commerciale.") + `<div class="wrap"><div class="dash"><aside class="side">${tabs.map(t => `<button data-act="atab" data-t="${t[0]}" class="${t[0] === adminTab ? "on" : ""}">${t[1]}</button>`).join("")}</aside><section id="abody"></section></div></div>`;
+};
+pages.admin.after = () => drawAdmin();
+function revenueByService() { const m = {}; S.local.requests.filter(r => r.status === "approved").forEach(r => { const k = r.service.split(" – ")[0]; m[k] = (m[k] || 0) + r.amount; }); return m; }
+async function drawAdmin() {
+  const b = $("#abody"); if (!b) return; const L = S.local; let h = BACKEND ? "" : '<p class="notice" style="margin-bottom:14px">Mode aperçu : les chiffres reflètent uniquement les données de cet appareil. Avec le backend, ils proviennent de la base centralisée.</p>';
+  const appr = L.requests.filter(r => r.status === "approved"), pend = L.requests.filter(r => r.status === "pending");
+  if (adminTab === "stats") {
+    const T = BACKEND ? S.stats : null; const today = T ? T.revenue.today : appr.filter(r => Date.now() - r.t < DAY).reduce((a, r) => a + r.amount, 0), month = T ? T.revenue.month : appr.filter(r => Date.now() - r.t < 30 * DAY).reduce((a, r) => a + r.amount, 0), year = T ? T.revenue.year : appr.filter(r => Date.now() - r.t < 365 * DAY).reduce((a, r) => a + r.amount, 0);
+    const act = T ? T.shopsActive : L.shops.filter(s => shopStatus(s) === "active").length, exp = T ? T.shopsExpired : L.shops.filter(s => shopStatus(s) === "expired").length;
+    h += `<div class="grid g4"><div class="kpi"><b>${money(today)}</b><span>Revenus du jour</span></div><div class="kpi"><b>${money(month)}</b><span>30 derniers jours</span></div><div class="kpi"><b>${money(year)}</b><span>12 derniers mois</span></div><div class="kpi"><b>${pend.length}</b><span>Locations en attente</span></div><div class="kpi"><b>${act}</b><span>Boutiques actives</span></div><div class="kpi"><b>${exp}</b><span>Boutiques expirées</span></div><div class="kpi"><b>${T ? T.apps : L.apps.length}</b><span>Candidatures</span></div><div class="kpi"><b>${T ? T.items : myItems().length}</b><span>Publications</span></div>${T ? `<div class="kpi"><b>${T.users}</b><span>Utilisateurs inscrits</span></div><div class="kpi"><b>${T.activeUsers}</b><span>Comptes actifs (30 j)</span></div><div class="kpi"><b>${T.revenue.transactions}</b><span>Transactions validées</span></div><div class="kpi"><b>${T.shopsSuspended}</b><span>Boutiques suspendues</span></div>` : ""}</div>`;
+    const rv = T ? T.revenue.byService : revenueByService(), keys = Object.keys(rv), max = Math.max(1, ...Object.values(rv));
+    h += `<h2 class="t">Revenus par service</h2><div class="card">${keys.length ? `<div class="bars" style="margin-bottom:28px">${keys.map(k => `<div style="height:${Math.max(4, rv[k] / max * 100)}%"><i>${money(rv[k])}</i><span>${esc(k.slice(0, 14))}</span></div>`).join("")}</div>` : '<p class="muted">Aucun paiement validé pour le moment.</p>'}</div>
+    <div class="row" style="margin-top:14px"><button class="btn blue sm" data-act="exportCsv" data-what="requests">Exporter les paiements (Excel/CSV)</button><button class="btn line sm" style="color:var(--blue)" data-act="printPage">Exporter en PDF (imprimer)</button></div>
+    `;
+  }
+  if (adminTab === "req") h += L.requests.length ? `<div class="tw"><table><tr><th>Date</th><th>Client</th><th>Service</th><th>Réf.</th><th>Montant</th><th>Preuve</th><th>Statut</th><th>Action</th></tr>${L.requests.map(r => `<tr><td>${fdate(r.t)}</td><td>${esc(r.userName)}</td><td>${esc(r.service)}</td><td>${esc(r.ref)}</td><td>${money(r.amount)}</td><td>${r.proofUrl ? `<a href="${esc(r.proofUrl)}" target="_blank" rel="noopener"><u>${esc(r.proof || "Voir")}</u></a>` : esc(r.proof || "—")}</td><td>${statusBadge(r.status)}</td><td>${r.status === "pending" ? `<button class="btn green sm" data-act="approve" data-id="${esc(r.id)}">Valider</button> <button class="btn red sm" data-act="refuse" data-id="${esc(r.id)}">Refuser</button>` : "—"}</td></tr>`).join("")}</table></div><p class="muted" style="font-size:.82rem;margin-top:8px">Ne validez qu'après avoir vérifié le paiement reçu. Une preuve seule ne suffit pas.</p>` : emptyBox("💳", "Aucune demande");
+  if (adminTab === "shops") h += L.shops.length ? `<div class="tw"><table><tr><th>Boutique</th><th>Formule</th><th>Expire</th><th>Statut</th><th>Action</th></tr>${L.shops.map(s => { const st = shopStatus(s); return `<tr><td>${esc(s.name)}</td><td>${esc(s.plan)}</td><td>${fdate(s.expires)}</td><td><span class="badge ${st === "active" ? "ok" : "bad"}">${st}</span></td><td>${s.status === "suspended" ? `<button class="btn green sm" data-act="shopState" data-id="${esc(s.id)}" data-s="active">Réactiver</button>` : `<button class="btn red sm" data-act="shopState" data-id="${esc(s.id)}" data-s="suspended">Suspendre</button>`}</td></tr>`; }).join("")}</table></div>` : emptyBox("🏬", "Aucune boutique");
+  if (adminTab === "users") h += BACKEND ? ((L.users || []).length ? `<div class="tw"><table><tr><th>Nom</th><th>Type de compte</th><th>Contact</th><th>Ville</th><th>Inscrit</th><th>Statut</th><th>Actions</th></tr>${L.users.map(x => `<tr><td>${esc(x.name)}${x.jobValidated ? ' <span class="badge ok">Validé emploi</span>' : ""}</td><td><select data-urole="${esc(x.id)}">${Object.keys(ROLES).map(r => `<option value="${r}" ${r === x.role ? "selected" : ""}>${ROLES[r]}</option>`).join("")}</select></td><td>${esc(x.phone || x.email || "—")}</td><td>${esc(x.city || "—")}</td><td>${fdate(x.created)}</td><td><span class="badge ${x.status === "active" ? "ok" : "bad"}">${x.status === "active" ? "Actif" : "Suspendu"}</span>${x.verified ? ' <span class="badge">Vérifié</span>' : ""}</td><td>${x.verified ? "" : `<button class="btn blue sm" data-act="userAct" data-id="${esc(x.id)}" data-a="verify">Vérifier</button> `}<button class="btn line sm" style="color:var(--blue)" data-act="userAct" data-id="${esc(x.id)}" data-a="resetpw">Mot de passe temp.</button> ${x.status === "active" ? `<button class="btn red sm" data-act="userAct" data-id="${esc(x.id)}" data-a="suspend">Suspendre</button>` : `<button class="btn green sm" data-act="userAct" data-id="${esc(x.id)}" data-a="activate">Réactiver</button>`}</td></tr>`).join("")}</table></div>` : emptyBox("👥", "Aucun utilisateur")) : `<div class="card">${emptyBox("👥", "Utilisateurs", "Les comptes réels apparaissent ici une fois le serveur DigiZORA connecté.")}</div>`;
+  if (adminTab === "mod") h += (L.reports.length ? `<div class="tw"><table><tr><th>Date</th><th>Module</th><th>Contenu</th><th>Action</th></tr>${L.reports.map(r => `<tr><td>${fdate(r.t)}</td><td>${esc(MODS[r.mod]?.title || r.mod)}</td><td>${esc(r.title)}</td><td><button class="btn red sm" data-act="removeReport" data-id="${esc(r.id)}" data-del="1">Retirer le contenu</button> <button class="btn line sm" style="color:var(--blue)" data-act="removeReport" data-id="${esc(r.id)}">Ignorer</button></td></tr>`).join("")}</table></div>` : emptyBox("🛡️", "Aucun signalement"));
+  if (adminTab === "tariffs") { const st = settings();
+    h += `<form id="tarForm" class="card" novalidate><h3>Formules de boutique (FCFA / mois)</h3><div class="grid g2" style="margin-top:10px">${st.plans.map((p, i) => `<div class="card"><b>${esc(p.name)}</b><div class="row" style="margin-top:8px"><div class="f"><label>Prix / mois</label><input type="number" min="0" data-k="plan.${i}.price" value="${p.price}"></div><div class="f"><label>Produits max</label><input type="number" min="1" data-k="plan.${i}.products" value="${p.products}"></div></div></div>`).join("")}</div>
+    <h3 style="margin-top:14px">Comptes professionnels (FCFA / mois)</h3><div class="row" style="margin-top:8px">${(st.proPlans || []).map((p, i) => `<div class="f"><label>${esc(p.label)}</label><input type="number" min="0" data-k="pro.${i}.price" value="${p.price}"></div>`).join("")}</div>
+    <h3 style="margin-top:14px">Espace publicitaire (FCFA)</h3><div class="row" style="margin-top:8px">${(st.adPlans || []).map((p, i) => `<div class="f"><label>${esc(p.label)}</label><input type="number" min="0" data-k="ad.${i}.price" value="${p.price}"></div>`).join("")}</div>
+    <h3 style="margin-top:14px">Durées et remises (%)</h3><div class="row" style="margin-top:8px">${st.durations.map((d, i) => `<div class="f"><label>${d.label} (${d.months} mois)</label><input type="number" min="0" max="90" data-k="dur.${i}.discount" value="${d.discount}"></div>`).join("")}</div>
+    <h3 style="margin-top:14px">Autres paramètres</h3><div class="row" style="margin-top:8px"><div class="f"><label>Validation demandeur d'emploi</label><input type="number" min="0" data-k="jobValidationFee" value="${st.jobValidationFee}"></div><div class="f"><label>Publication d'offre d'emploi</label><input type="number" min="0" data-k="jobPostFee" value="${st.jobPostFee}"></div><div class="f"><label>Annonce sponsorisée</label><input type="number" min="0" data-k="sponsoredAdFee" value="${st.sponsoredAdFee}"></div><div class="f"><label>Annonces gratuites max</label><input type="number" min="0" data-k="freeAdLimit" value="${st.freeAdLimit}"></div><div class="f"><label>Commission (%)</label><input type="number" min="0" max="50" step=".5" data-k="commissionPct" value="${st.commissionPct}"></div></div>
+    <button class="btn blue" type="submit">Enregistrer les tarifs</button></form>`; }
+  if (adminTab === "ads") h += (L.ads || []).length ? `<div class="grid g3">${L.ads.map(a => adCard(a, true)).join("")}</div>` : emptyBox("📢", "Aucune publicité", "Les publicités louées par les membres apparaîtront ici. Vous pouvez aussi publier la vôtre gratuitement depuis la rubrique « Publicité ».");
+  if (adminTab === "outbox") h += `<p class="notice info" style="margin-bottom:14px">Chaque inscription déclenche un e-mail et un message WhatsApp de bienvenue. L'envoi automatique nécessite la configuration du serveur (fichier <b>config.env</b> : SMTP_* pour l'e-mail, WA_* pour WhatsApp). À défaut, envoyez le message WhatsApp manuellement d'un clic.</p>` + ((L.outbox || []).length ? `<div class="tw"><table><tr><th>Date</th><th>Canal</th><th>Destinataire</th><th>Statut</th><th>Action</th></tr>${L.outbox.map(o => `<tr><td>${new Date(o.t).toLocaleString("fr-FR")}</td><td>${o.channel === "email" ? "✉️ E-mail" : "💬 WhatsApp"}</td><td>${esc(o.dest)}</td><td><span class="badge ${o.status === "sent" ? "ok" : o.status === "failed" ? "bad" : "warn"}" title="${esc(o.error || "")}">${o.status === "sent" ? "Envoyé" : o.status === "failed" ? "Échec" : "Non configuré"}</span></td><td>${o.channel === "whatsapp" && o.status !== "sent" ? `<a class="btn green sm" target="_blank" rel="noopener" href="https://wa.me/${esc(o.dest)}?text=${encodeURIComponent(o.body)}">Envoyer manuellement</a>` : ""}</td></tr>`).join("")}</table></div>` : emptyBox("📨", "Aucun message", "Les messages de bienvenue envoyés aux nouveaux inscrits apparaîtront ici."));
+  if (adminTab === "msgs") h += (L.adminMsgs || []).length ? L.adminMsgs.map(m => `<div class="card" style="margin-bottom:10px"><span class="badge ${m.type === "claim" ? "warn" : m.type === "reset" ? "bad" : ""}">${m.type === "claim" ? "Réclamation" : m.type === "reset" ? "Mot de passe oublié" : "Message"}</span> <b>${esc(m.subject)}</b><p>${esc(m.body)}</p><div class="muted" style="font-size:.82rem">${esc(m.userName || "Inconnu")}${m.phone ? " • " + esc(m.phone) : ""} • ${fdate(m.t)}</div><button class="btn line sm" style="color:var(--blue);margin-top:8px" data-act="adminMsgClose" data-id="${esc(m.id)}">Marquer comme traité</button></div>`).join("") : emptyBox("✉️", "Aucun message en attente");
+  if (adminTab === "audit") h += L.audit.length ? `<div class="tw"><table><tr><th>Date</th><th>Par</th><th>Opération</th></tr>${L.audit.map(a => `<tr><td>${new Date(a.t).toLocaleString("fr-FR")}</td><td>${esc(a.who)}</td><td class="wrapc">${esc(a.a)}</td></tr>`).join("")}</table></div>` : emptyBox("📜", "Journal vide");
+  b.innerHTML = h;
+}
+
+/* ==========================================================================
+   7. ROUTEUR
+   ========================================================================== */
+async function route() {
+  const parts = location.hash.replace(/^#\/?/, "").split("/"); const key = parts[0] || "home", arg = parts.slice(1).join("/");
+  const mod = modByPath(key);
+  const fn = mod ? pages["mod_" + mod] : pages[key] || pages.home;
+  const view = $("#view"); view.innerHTML = '<div class="wrap" style="padding-top:30px"><div class="skel"></div></div>';
+  try { view.innerHTML = await fn(arg); fn.after && fn.after(arg); }
+  catch (e) { view.innerHTML = `<div class="wrap" style="padding-top:30px">${emptyBox("⚠️", "Impossible de charger la page", esc(e.message === "NO_BACKEND" ? "Backend non connecté." : e.message))}</div>`; }
+  window.scrollTo({ top:0 }); view.focus({ preventScroll:true });
+  $("#nav").classList.remove("open"); renderChrome();
+  if (BACKEND && S.user && !["tableau-de-bord", "admin", "paiement"].includes(key)) syncAll().then(renderChrome);
+}
+window.addEventListener("hashchange", route);
+
+/* ==========================================================================
+   8. ENTÊTE, MENU, PIED DE PAGE
+   ========================================================================== */
+function renderChrome() {
+  const cur = location.hash.replace(/^#\/?/, "").split("/")[0];
+  const nav = [["boutiques","Boutiques"],["emploi","Emploi"],["annonces","Annonces"],["immobilier","Immobilier"],["services","Services"],["formations","Formations"],["transport","Transport"],["location-vehicules","Location auto"],["opportunites","Opportunités"],["communaute","Communauté"],["comptes-pro","Comptes pro"],["publicite","Publicité"]];
+  const u = S.user, unread = S.local.notifs.filter(n => !n.read).length;
+  const btns = u
+    ? `<a class="btn gold sm" href="#/tableau-de-bord">Mon espace</a><button class="btn line sm" style="color:var(--blue)" data-act="logout">Déconnexion</button>`
+    : `<a class="btn line sm" style="color:var(--blue)" href="#/connexion">Connexion</a><a class="btn gold sm" href="#/inscription">Créer un compte</a>`;
+  $("#nav").innerHTML = nav.map(n => `<a href="#/${n[0]}" class="${cur === n[0] ? "on" : ""}">${n[1]}</a>`).join("") + `<div class="navact">${btns}</div>`;
+  $("#actions").innerHTML = (u ? `<a class="bell" href="#/tableau-de-bord" data-act="gotoNotifs" aria-label="Notifications">🔔${unread ? `<i>${unread}</i>` : ""}</a>` : "") + btns;
+  const pb = $("#previewbar");
+  if (!BACKEND) { pb.classList.remove("hide"); pb.textContent = "Mode aperçu : backend non connecté. Aucun paiement ni compte réel. Voir GUIDE-BACKEND.md"; } else pb.classList.add("hide");
+  $("#fwa").href = wa("Bonjour DigiZORA, j'ai besoin d'assistance."); $("#fwan").textContent = CONFIG.WHATSAPP_LABEL; $("#yr").textContent = new Date().getFullYear();
+}
+$("#burger").addEventListener("click", () => $("#nav").classList.toggle("open"));
+$("#gsearch").addEventListener("submit", e => { e.preventDefault(); const q = $("#gq").value.trim(); if (q) location.hash = "#/recherche/" + encodeURIComponent(q); });
+
+/* ==========================================================================
+   9. ACTIONS (clics délégués)
+   ========================================================================== */
+function findItemLocal(mod, id) { return (listState[mod]?.items || []).find(i => String(i.id) === String(id)); }
+async function getItem(mod, id) { return findItemLocal(mod, id) || (await loadList(mod)).find(i => String(i.id) === String(id)); }
+
+const actions = {
+  closeModal,
+  async userAct(d) {
+    try { const r = await api("/api/admin/users/" + encodeURIComponent(d.id), { method:"POST", body:{ action:d.a } });
+      if (r.tempPassword) openModal(`<h2>Mot de passe temporaire</h2><p class="muted" style="margin:8px 0">Communiquez-le à l'utilisateur de façon sûre (WhatsApp). Il ne sera plus affiché.</p><div class="card" style="font-size:1.4rem;font-weight:800;letter-spacing:1px;text-align:center">${esc(r.tempPassword)}</div>`);
+      await syncAll(); drawAdmin(); toast("Action effectuée.", "ok"); } catch (e) { toast(e.message, "bad"); }
+  },
+  async adminMsgClose(d) { try { await api("/api/admin/msgs/" + encodeURIComponent(d.id), { method:"POST", body:{} }); await syncAll(); drawAdmin(); } catch (e) { toast(e.message, "bad"); } },
+  async detail(d) {
+    const it = await getItem(d.mod, d.id); if (!it) return; const M = MODS[d.mod];
+    const contact = it.contact || it.wa;
+    openModal(`${it.photo ? `<img src="${esc(it.photo)}" alt="${esc(it.title)}" style="width:100%;max-height:260px;object-fit:cover;border-radius:14px;margin-bottom:10px">` : ""}<span class="badge">${esc(it.cat)}</span> <span class="badge">📍 ${esc(it.city)}</span>${it.sample ? ' <span class="badge gold">Exemple</span>' : ""}<h2 style="margin:10px 0">${esc(it.title)}</h2>${it.price ? `<div class="price" style="font-size:1.4rem;font-weight:900;color:var(--blue)">${money(it.price)}</div>` : ""}${it.org ? `<p class="muted">${esc(it.org)}</p>` : ""}<p style="margin:10px 0">${esc(it.desc)}</p>${it.sold ? '<p class="notice">🔴 Cet article est vendu ou n\'est plus disponible.</p>' : ""}${contactBlock(contact, null, it.address)}
+    ${d.mod === "realestate" || d.mod === "market" ? '<p class="notice">Vérifiez toujours le bien et les documents avant de payer. Ne versez jamais d\'argent à distance à un inconnu.</p>' : ""}
+    <div class="row" style="margin-top:14px">${contact ? `<a class="btn green" target="_blank" rel="noopener" href="https://wa.me/${esc(waDigits(contact))}?text=${encodeURIComponent("Bonjour, je suis intéressé par : " + it.title + " (DigiZORA)")}">WhatsApp vendeur</a>` : ""}
+    ${M.action ? `<button class="btn blue" data-act="primary" data-mod="${d.mod}" data-id="${esc(it.id)}">${M.action}</button>` : ""}</div>`);
+  },
+  async primary(d) {
+    if (!isLogged()) { closeModal(); return needLogin("Connectez-vous pour continuer."); }
+    const it = await getItem(d.mod, d.id); const rec = { id:uid(), t:Date.now(), userId:S.user.id, title:it.title, mod:d.mod, ref:it.id };
+    try { if (BACKEND) await api("/api/" + d.mod + "/" + encodeURIComponent(it.id) + "/apply", { method:"POST", body:{} }); else { S.local.apps.unshift(rec); saveLocal(); previewNote(); } closeModal(); toast("Demande enregistrée : « " + it.title + " ».", "ok"); }
+    catch (e) { toast(e.message, "bad"); }
+  },
+  fav(d) { const i = S.favs.indexOf(d.key); i >= 0 ? S.favs.splice(i, 1) : S.favs.push(d.key); LS.set("dc_favs", S.favs); const b = document.querySelector(`[data-act=fav][data-key="${CSS.escape(d.key)}"]`); if (b) { const on = S.favs.includes(d.key); b.classList.toggle("on", on); b.textContent = on ? "♥" : "♡"; } if (dashTab === "favs" && $("#dbody")) drawDash(); },
+  async report(d) {
+    if (!isLogged()) return needLogin("Connectez-vous pour signaler un contenu.");
+    const it = await getItem(d.mod, d.id);
+    try { if (BACKEND) await api("/api/reports", { method:"POST", body:{ module:d.mod, id:d.id } }); else { S.local.reports.unshift({ id:uid(), t:Date.now(), mod:d.mod, title:it.title, itemId:d.id }); saveLocal(); } toast("Signalement transmis à la modération.", "ok"); } catch (e) { toast(e.message, "bad"); }
+  },
+  page(d) { listState[d.key].page = +d.p; drawModule(d.key); window.scrollTo({ top:0, behavior:"smooth" }); },
+  copyLink() { navigator.clipboard?.writeText(location.href).then(() => toast("Lien copié.", "ok"), () => toast("Copie impossible.", "bad")); },
+  logout() { (BACKEND ? api("/api/auth/logout", { method:"POST" }).catch(() => {}) : Promise.resolve()).then(() => { S.user = null; saveUser(); if (BACKEND) { S.local = EMPTY_LOCAL(); S.stats = null; } toast("Vous êtes déconnecté."); location.hash = "#/"; renderChrome(); }); },
+  previewLogin() {
+    openModal(`<h2>Mode aperçu</h2><p class="muted" style="margin:8px 0">Explorez les espaces personnels. Aucun compte réel n'est créé et aucun mot de passe n'est enregistré.</p><form id="pvForm" novalidate>${field("name", "Votre prénom")}${selectF("role", "Type de compte", Object.keys(ROLES), "Choisir…").replace(/<option>(\w+)<\/option>/g, (m, r) => `<option value="${r}">${ROLES[r]}</option>`)}<button class="btn blue" style="width:100%" type="submit">Entrer en mode aperçu</button></form>`);
+  },
+  dtab(d) { dashTab = d.t; $$("#dside button").forEach(b => b.classList.toggle("on", b.dataset.t === d.t)); drawDash(); },
+  atab(d) { adminTab = d.t; $$(".side button").forEach(b => b.classList.toggle("on", b.dataset.t === d.t)); drawAdmin(); },
+  gotoNotifs() { dashTab = "notifs"; },
+  readAll() { if (BACKEND) return api("/api/notifs/read", { method:"POST", body:{} }).then(async () => { await syncAll(); drawDash(); renderChrome(); }).catch(e => toast(e.message, "bad")); S.local.notifs.forEach(n => n.read = true); saveLocal(); drawDash(); renderChrome(); },
+  rentShop(d) {
+    if (!isLogged()) return needLogin("Créez un compte ou connectez-vous pour louer une boutique.");
+    if (!["commercant","entreprise","particulier"].includes(S.user.role)) return toast("Un compte Commerçant ou Entreprise est requis pour louer une boutique.", "bad");
+    const st = settings(), p = st.plans.find(x => x.id === d.plan), du = st.durations.find(x => x.id === d.dur);
+    const amount = p.price * du.months * (1 - du.discount / 100);
+    openModal(`<h2>Louer : ${esc(p.name)}</h2><p class="muted">${du.label} • ${money(amount)}</p><form id="shopForm" novalidate style="margin-top:12px" data-plan="${p.id}" data-dur="${du.id}">${field("sname", "Nom de la boutique")}${selectF("scat", "Catégorie", ["Électronique","Vêtements","Alimentation","Informatique","Beauté","Maison","Autres"], "Choisir…")}${selectF("scity", "Localisation", CITIES, "Choisir…")}${field("swa", "Numéro WhatsApp (+242…)", "tel")}<div class="f"><label for="sdesc">Description</label><textarea id="sdesc"></textarea><div class="err" data-err="sdesc"></div></div><button class="btn gold" style="width:100%" type="submit">Générer ma référence de paiement</button></form>`);
+  },
+  reqService(d) { createRequest(d.svc, +d.amt, {}); },
+  async epay(d) {
+    const r = S.local.requests.find(x => x.id === d.id);
+    if (!BACKEND) return toast("Paiement électronique non configuré. Aucune transaction n'est simulée : connectez le backend et un prestataire Mobile Money (GUIDE-BACKEND.md).", "bad");
+    try { const res = await api(CONFIG.PAY_API, { method:"POST", body:{ reference:r.ref } }); if (res.redirectUrl) location.href = res.redirectUrl; else toast("Paiement initié. Vous serez notifié après confirmation par le serveur.", "ok"); } catch (e) { toast(e.message, "bad"); }
+  },
+  approve(d) { decide(d.id, "approved"); }, refuse(d) { decide(d.id, "refused"); },
+  shopState(d) { if (BACKEND) return api("/api/admin/shops/" + encodeURIComponent(d.id), { method:"POST", body:{ status:d.s } }).then(async () => { await syncAll(); drawAdmin(); toast("Statut mis à jour.", "ok"); }).catch(e => toast(e.message, "bad")); const s = S.local.shops.find(x => x.id === d.id); s.status = d.s; saveLocal(); audit(`Boutique « ${s.name} » : ${d.s}`); drawAdmin(); toast("Statut mis à jour.", "ok"); },
+  removeReport(d) { if (BACKEND) return api("/api/admin/reports/" + encodeURIComponent(d.id), { method:"POST", body:{ delete:!!d.del } }).then(async () => { await syncAll(); drawAdmin(); toast("Modération enregistrée.", "ok"); }).catch(e => toast(e.message, "bad")); const r = S.local.reports.find(x => x.id === d.id); if (d.del && r) { for (const m in S.local.items) S.local.items[m] = S.local.items[m].filter(i => i.id !== r.itemId); audit(`Contenu retiré : ${r.title}`); } else audit(`Signalement ignoré : ${r?.title}`); S.local.reports = S.local.reports.filter(x => x.id !== d.id); saveLocal(); drawAdmin(); },
+  exportCsv() { const rows = [["Date","Client","Service","Référence","Montant","Statut"], ...S.local.requests.map(r => [fdate(r.t), r.userName, r.service, r.ref, r.amount, r.status])]; const csv = "\uFEFF" + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n"); const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv;charset=utf-8" })); a.download = "digizora-paiements.csv"; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); },
+  printPage() { window.print(); },
+  publish(d) {
+    if (!isLogged()) return needLogin("Connectez-vous pour publier.");
+    const M = MODS[d.mod], mine = (S.local.items[d.mod] || []).length;
+    if (!BACKEND && d.mod === "market" && mine >= settings().freeAdLimit) return toast(`Limite de ${settings().freeAdLimit} annonces gratuites atteinte. Options premium disponibles via l'administration.`, "bad");
+    openModal(`<h2>${M.icon} Publier – ${M.title}</h2><form id="pubForm" data-mod="${d.mod}" novalidate style="margin-top:12px">${field("title", "Titre")}${selectF("cat", "Catégorie", M.cats, "Choisir…")}${selectF("city", "Ville", CITIES, "Choisir…")}${M.priceLabel ? field("price", M.priceLabel, "number", 'min="0"') : ""}${field("contact", "Téléphone / WhatsApp affiché (+242…)", "tel", `value="${esc(S.user.phone || "")}"`)}${field("address", "Adresse précise (facultatif)")}<div class="f"><label for="desc">Description</label><textarea id="desc"></textarea><div class="err" data-err="desc"></div></div><div class="f"><label for="photo">📷 Photo — recommandée, elle attire plus d'acheteurs (facultatif • JPG/PNG/WebP, ${CONFIG.MAX_FILE_MB} Mo max)</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"><div class="err" data-err="photo"></div></div><button class="btn gold" style="width:100%" type="submit">Publier</button></form>`);
+  },
+  adClick(d) { if (BACKEND) api("/api/ads/" + encodeURIComponent(d.id) + "/click", { method:"POST", body:{} }).catch(() => {}); },
+  adRent(d) {
+    if (!isLogged()) return needLogin("Connectez-vous pour louer l'espace publicitaire.");
+    if (!BACKEND) return toast("La location d'espace publicitaire nécessite le serveur DigiZORA.", "bad");
+    const plans = settings().adPlans || DEFAULT_SETTINGS.adPlans, adm = S.user.role === "admin";
+    openModal(`<h2>📢 Louer l'espace publicitaire</h2><p class="muted" style="margin:6px 0 10px">${adm ? "Compte administrateur : votre publicité est mise en ligne immédiatement et gratuitement." : "Votre publicité sera mise en ligne après validation du paiement, pour la durée choisie."}</p>
+    <form id="adForm" novalidate>${field("title", "Titre / slogan de la publicité")}
+    <div class="f"><label for="plan">Durée</label><select id="plan" name="plan">${plans.map(p => `<option value="${esc(p.id)}" ${p.id === d.plan ? "selected" : ""}>${esc(p.label)} — ${money(p.price)}</option>`).join("")}</select></div>
+    ${field("link", "Lien ou numéro WhatsApp au clic (facultatif)", "text", 'placeholder="https://… ou +242…"')}
+    <div class="f"><label for="media">Image ou vidéo <small>(JPG, PNG, WebP, MP4 ou WebM — 12 Mo max)</small></label><input id="media" type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"><div class="err" data-err="media"></div></div>
+    <button class="btn gold" style="width:100%" type="submit">${adm ? "Publier" : "Continuer vers le paiement"}</button></form>`);
+  },
+  adRenew(d) {
+    const plans = settings().adPlans || DEFAULT_SETTINGS.adPlans;
+    openModal(`<h2>Renouveler la publicité</h2><form id="adRenewForm" data-id="${esc(d.id)}" novalidate style="margin-top:10px"><div class="f"><label for="plan">Durée</label><select id="plan" name="plan">${plans.map(p => `<option value="${esc(p.id)}">${esc(p.label)} — ${money(p.price)}</option>`).join("")}</select></div><button class="btn gold" style="width:100%" type="submit">Continuer vers le paiement</button></form>`);
+  },
+  async adDelete(d) {
+    if (!confirm("Retirer cette publicité ?")) return;
+    try { await api("/api/ads/" + encodeURIComponent(d.id), { method:"DELETE" }); await syncAll(); $("#abody") ? drawAdmin() : drawDash(); toast("Publicité retirée.", "ok"); } catch (e) { toast(e.message, "bad"); }
+  },
+  async toggleSold(d) {
+    const sold = d.sold !== "1";
+    try {
+      if (BACKEND) { await api(d.kind === "prod" ? `/api/shops/${encodeURIComponent(d.shop)}/products/${encodeURIComponent(d.id)}/sold` : `/api/${d.mod}/${encodeURIComponent(d.id)}/sold`, { method:"POST", body:{ sold } }); await syncAll(); }
+      else { const list = d.kind === "prod" ? S.local.items["prod_" + d.shop] : S.local.items[d.mod]; const it = (list || []).find(x => x.id === d.id); if (it) it.sold = sold; saveLocal(); }
+      drawDash(); toast(sold ? "Marqué comme vendu." : "Remis en stock.", "ok");
+    } catch (e) { toast(e.message, "bad"); }
+  },
+  addProduct(d) {
+    const sh = S.local.shops.find(x => x.id === d.shop) || {};
+    openModal(`<h2>Ajouter un produit</h2><form id="prodForm" data-shop="${esc(d.shop)}" novalidate style="margin-top:12px">${field("title", "Nom du produit")}${field("price", "Prix (FCFA)", "number", 'min="0"')}
+    <div class="f"><label for="photo">📷 Photo du produit — recommandée pour mieux vendre (facultatif)</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"><div class="err" data-err="photo"></div></div>
+    ${field("phone", "Téléphone / WhatsApp du produit", "tel", `placeholder="Par défaut : ${esc(sh.wa ? "+" + sh.wa : "numéro de la boutique")}"`)}
+    ${selectF("city", "Localité", CITIES).replace(`<option>${esc(sh.city || "")}</option>`, `<option selected>${esc(sh.city || "")}</option>`)}
+    ${field("address", "Adresse précise (facultatif)")}
+    <button class="btn blue" style="width:100%" type="submit">Ajouter</button></form>`);
+  },
+  delProduct(d) { if (BACKEND) return api("/api/shops/" + encodeURIComponent(d.shop) + "/products/" + encodeURIComponent(d.id), { method:"DELETE" }).then(async () => { await syncAll(); drawDash(); }).catch(e => toast(e.message, "bad")); const k = "prod_" + d.shop; S.local.items[k] = (S.local.items[k] || []).filter(p => p.id !== d.id); saveLocal(); drawDash(); },
+  delItem(d) { if (BACKEND) return api("/api/" + d.mod + "/" + encodeURIComponent(d.id), { method:"DELETE" }).then(async () => { await syncAll(); drawDash(); toast("Publication supprimée."); }).catch(e => toast(e.message, "bad")); S.local.items[d.mod] = (S.local.items[d.mod] || []).filter(i => i.id !== d.id); saveLocal(); drawDash(); toast("Publication supprimée."); }
+};
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]"); if (!el) return; const a = el.dataset.act;
+  if (actions[a]) { if (el.tagName === "BUTTON") e.preventDefault(); actions[a](el.dataset); }
+});
+
+function createRequest(service, amount, extra) {
+  if (!isLogged()) return needLogin("Connectez-vous pour continuer.");
+  const d = new Date(), ref = "DZ-" + d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0") + "-" + Math.random().toString(36).slice(2, 6).toUpperCase();
+  const r = { id:uid(), ref, service, amount, status:"pending", t:Date.now(), userId:S.user.id, userName:S.user.name, ...extra };
+  if (BACKEND) { api("/api/payment-requests", { method:"POST", body:r }).then(res => { closeModal(); location.hash = "#/paiement/" + (res.id || r.id); }).catch(e => toast(e.message, "bad")); return; }
+  S.local.requests.unshift(r); saveLocal(); audit(`Demande créée : ${service} (${ref})`); closeModal(); previewNote(); location.hash = "#/paiement/" + r.id;
+}
+function decide(id, status) {
+  if (BACKEND) { api("/api/admin/requests/" + encodeURIComponent(id) + "/decision", { method:"POST", body:{ status } }).then(async () => { await syncAll(); drawAdmin(); toast(status === "approved" ? "Paiement validé, service activé." : "Demande refusée.", "ok"); }).catch(e => toast(e.message, "bad")); return; }
+  const r = S.local.requests.find(x => x.id === id); if (!r) return; r.status = status;
+  if (status === "approved" && r.shopData) { const du = settings().durations.find(x => x.id === r.durId); S.local.shops.unshift({ id:uid(), userId:r.userId, ...r.shopData, status:"active", expires:Date.now() + du.months * 30 * DAY, plan:r.planName }); }
+  audit(`${status === "approved" ? "Validation" : "Refus"} du paiement ${r.ref} (${money(r.amount)})`); saveLocal();
+  if (r.userId === S.user.id) notify(status === "approved" ? `Paiement ${r.ref} validé : votre service est activé.` : `Paiement ${r.ref} refusé. Contactez l'assistance.`);
+  drawAdmin(); toast(status === "approved" ? "Paiement validé, service activé." : "Demande refusée.", "ok");
+}
+
+/* ==========================================================================
+   10. FORMULAIRES (validation + soumission)
+   ========================================================================== */
+const showErrs = (form, errs) => { $$("[data-err]", form).forEach(n => n.textContent = errs[n.dataset.err] || ""); return !Object.keys(errs).length; };
+const phoneOk = v => /^\+?[0-9 ]{8,16}$/.test(v.trim());
+const emailOk = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+function fileOk(f) { if (!f) return ""; if (!CONFIG.FILE_TYPES.includes(f.type)) return "Format non accepté."; if (f.size > CONFIG.MAX_FILE_MB * 1048576) return `Fichier trop lourd (${CONFIG.MAX_FILE_MB} Mo max).`; return ""; }
+
+document.addEventListener("submit", async e => {
+  const f = e.target; e.preventDefault(); const v = id => (f.elements[id]?.value || "").trim();
+  if (f.id === "pvForm") {
+    const errs = {}; if (!v("name")) errs.name = "Indiquez un prénom."; if (!v("role")) errs.role = "Choisissez un type.";
+    if (!showErrs(f, errs)) return;
+    S.user = { id:"preview-" + uid(), name:v("name"), role:v("role"), preview:true }; saveUser(); closeModal(); toast("Mode aperçu activé.", "ok"); location.hash = S.user.role === "admin" ? "#/admin" : "#/tableau-de-bord"; return;
+  }
+  if (f.id === "loginForm") {
+    const errs = {}; if (!v("email")) errs.email = "Champ requis."; if (!v("password")) errs.password = "Champ requis.";
+    if (!showErrs(f, errs)) return;
+    try { const r = await api("/api/auth/login", { method:"POST", body:{ identifier:v("email"), password:f.elements.password.value } }); S.user = r.user; saveUser(); await syncAll(); toast("Bienvenue " + r.user.name, "ok"); const b = sessionStorage.getItem("dc_back"); sessionStorage.removeItem("dc_back"); location.hash = b || "#/tableau-de-bord"; }
+    catch (er) { toast(er.code === "NO_BACKEND" ? "Backend non connecté : utilisez le mode aperçu." : er.message, "bad"); }
+    return;
+  }
+  if (f.id === "regForm") {
+    const errs = {}; if (!v("role")) errs.role = "Choisissez un type de compte."; if (v("name").length < 3) errs.name = "Nom trop court."; if (!phoneOk(v("phone"))) errs.phone = "Téléphone invalide."; if (v("email") && !emailOk(v("email"))) errs.email = "E-mail invalide."; if (!v("city")) errs.city = "Choisissez une ville.";
+    const pw = f.elements.password.value; if (pw.length < 8 || !/\d/.test(pw) || !/[A-Za-z]/.test(pw)) errs.password = "8 caractères min., avec lettres et chiffres."; if (!$("#terms").checked) errs.terms = "Acceptation requise.";
+    if (!showErrs(f, errs)) return;
+    try { const rg = await api("/api/auth/register", { method:"POST", body:{ role:v("role"), name:v("name"), phone:v("phone"), email:v("email"), city:v("city"), password:pw } }); S.user = rg.user; saveUser(); await syncAll(); toast("Compte créé. Bienvenue sur DigiZORA ! " + (v("email") ? "Un e-mail de bienvenue vous est envoyé." : ""), "ok"); location.hash = "#/tableau-de-bord"; }
+    catch (er) { toast(er.code === "NO_BACKEND" ? "Backend non connecté : aucun compte réel ne peut être créé. Utilisez le mode aperçu." : er.message, "bad"); }
+    return;
+  }
+  if (f.id === "forgotForm") {
+    if (!v("email")) return showErrs(f, { email:"Champ requis." });
+    try { const fg = await api("/api/auth/forgot", { method:"POST", body:{ identifier:v("email") } }); toast(fg.message, "ok"); } catch (er) { toast(er.code === "NO_BACKEND" ? "Backend non connecté : récupération indisponible en mode aperçu." : er.message, "bad"); }
+    return;
+  }
+  if (f.id === "profForm") {
+    const errs = {}; if (v("name").length < 3) errs.name = "Nom trop court."; if (v("phone") && !phoneOk(v("phone"))) errs.phone = "Téléphone invalide."; if (v("email") && !emailOk(v("email"))) errs.email = "E-mail invalide.";
+    if (!showErrs(f, errs)) return;
+    const p = { name:v("name"), phone:v("phone"), email:v("email"), city:v("city") };
+    try { if (BACKEND) await api("/api/me", { method:"PUT", body:p }); else previewNote(); Object.assign(S.user, p); saveUser(); toast("Profil enregistré.", "ok"); renderChrome(); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "pwForm") {
+    const errs = {}, np = f.elements.password.value; if (!f.elements.current.value) errs.current = "Champ requis."; if (np.length < 8 || !/\d/.test(np) || !/[A-Za-z]/.test(np)) errs.password = "8 caractères min., avec lettres et chiffres.";
+    if (!showErrs(f, errs)) return;
+    try { await api("/api/me/password", { method:"POST", body:{ current:f.elements.current.value, password:np } }); f.reset(); toast("Mot de passe modifié.", "ok"); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "jpForm") {
+    const errs = {}; if (!v("title")) errs.title = "Champ requis."; if (!showErrs(f, errs)) return;
+    const msg = fileOk($("#cv").files[0]); if (msg) return toast("CV : " + msg, "bad");
+    try { if (BACKEND) { const fd = new FormData(); fd.append("title", v("title")); fd.append("skills", $("#skills").value); fd.append("exp", $("#exp").value); if ($("#cv").files[0]) fd.append("cv", $("#cv").files[0]); await api("/api/job-profile", { method:"PUT", body:fd }); await syncAll(); } else previewNote(); toast("Profil professionnel enregistré.", "ok"); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "msgForm" || f.id === "claimForm") {
+    const errs = {}; if (!v("subject")) errs.subject = "Champ requis."; if (!$("#body").value.trim()) errs.body = "Message requis."; if (!showErrs(f, errs)) return;
+    const m = { id:uid(), t:Date.now(), type:f.id === "msgForm" ? "msg" : "claim", subject:v("subject"), body:$("#body").value.trim() };
+    try { if (BACKEND) { await api("/api/messages", { method:"POST", body:m }); await syncAll(); } else { S.local.msgs.unshift(m); saveLocal(); previewNote(); } toast("Envoyé.", "ok"); drawDash(); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "shopForm") {
+    const errs = {}; if (v("sname").length < 3) errs.sname = "Nom trop court."; if (!v("scat")) errs.scat = "Choisissez une catégorie."; if (!v("scity")) errs.scity = "Choisissez une ville."; if (!phoneOk(v("swa"))) errs.swa = "Numéro invalide."; if (v("sdesc").length < 10) errs.sdesc = "Décrivez votre boutique (10 caractères min.).";
+    if (!showErrs(f, errs)) return;
+    const st = settings(), p = st.plans.find(x => x.id === f.dataset.plan), du = st.durations.find(x => x.id === f.dataset.dur);
+    createRequest(`Boutique – ${p.name} (${du.label})`, p.price * du.months * (1 - du.discount / 100), { planName:p.name, durId:du.id, shopData:{ name:v("sname"), cat:v("scat"), city:v("scity"), wa:v("swa").replace(/\D/g, ""), desc:v("sdesc"), emoji:"🏬" } });
+    return;
+  }
+  if (f.id === "pubForm") {
+    const mod = f.dataset.mod, M = MODS[mod], errs = {};
+    if (v("title").length < 4) errs.title = "Titre trop court."; if (!v("cat")) errs.cat = "Choisissez une catégorie."; if (!v("city")) errs.city = "Choisissez une ville."; if (v("desc").length < 10) errs.desc = "Description trop courte.";
+    if (M.priceLabel && v("price") !== "" && +v("price") < 0) errs.price = "Prix invalide."; if (v("contact") && !phoneOk(v("contact"))) errs.contact = "Numéro invalide.";
+    const fm = fileOk($("#photo").files[0]); if (fm) errs.photo = fm;
+    if (!showErrs(f, errs)) return;
+    const item = { id:uid(), title:v("title"), cat:v("cat"), city:v("city"), price:+v("price") || 0, contact:v("contact"), address:v("address"), desc:v("desc"), emoji:M.icon, t:Date.now(), userId:S.user.id };
+    try { if (BACKEND) { const fd = new FormData(); Object.entries(item).forEach(([k, val]) => fd.append(k, val)); if ($("#photo").files[0]) fd.append("photo", $("#photo").files[0]); await api("/api/" + mod, { method:"POST", body:fd }); await syncAll(); } else { (S.local.items[mod] ||= []).unshift(item); saveLocal(); audit("Publication : " + item.title); previewNote(); }
+      closeModal(); toast("Publication enregistrée" + (BACKEND ? " et envoyée à la modération." : "."), "ok"); if (location.hash.includes(M.path)) { listState[mod].items = await loadList(mod); drawModule(mod); } else if (dashTab === "posts") drawDash(); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "adForm") {
+    const errs = {}, file = $("#media").files[0];
+    if (v("title").length < 2) errs.title = "Titre requis (2 caractères min.).";
+    if (!file) errs.media = "Ajoutez une image ou une vidéo."; else if (!["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"].includes(file.type)) errs.media = "Format non accepté."; else if (file.size > 12 * 1048576) errs.media = "Fichier trop lourd (12 Mo max).";
+    if (!showErrs(f, errs)) return;
+    try {
+      const fd = new FormData(); fd.append("title", v("title")); fd.append("plan", v("plan")); fd.append("link", v("link")); fd.append("media", file);
+      const r = await api("/api/ads", { method:"POST", body:fd }); closeModal(); await syncAll();
+      if (r.requestId) { toast("Publicité enregistrée. Réglez le paiement pour l'activer.", "ok"); location.hash = "#/paiement/" + r.requestId; }
+      else { toast("Publicité mise en ligne.", "ok"); dashTab = "ads"; location.hash = "#/tableau-de-bord"; if (location.hash === "#/tableau-de-bord") route(); }
+    } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "adRenewForm") {
+    try { const r = await api("/api/ads/" + encodeURIComponent(f.dataset.id) + "/renew", { method:"POST", body:{ plan:v("plan") } }); closeModal(); await syncAll(); toast("Réglez le paiement pour réactiver la publicité.", "ok"); location.hash = "#/paiement/" + r.requestId; }
+    catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "prodForm") {
+    const errs = {}; if (v("title").length < 2) errs.title = "Nom requis."; if (v("price") === "" || +v("price") < 0) errs.price = "Prix invalide."; { const pm = fileOk($("#photo")?.files[0]); if (pm) errs.photo = pm; } if (v("phone") && !phoneOk(v("phone"))) errs.phone = "Numéro invalide."; if (!showErrs(f, errs)) return;
+    if (BACKEND) { try { await api("/api/shops/" + encodeURIComponent(f.dataset.shop) + "/products", { method:"POST", body:(() => { const fd = new FormData(); fd.append("title", v("title")); fd.append("price", v("price")); ["phone", "city", "address"].forEach(k => v(k) && fd.append(k, v(k))); const ph = $("#photo")?.files[0]; if (ph) fd.append("photo", ph); return fd; })() }); await syncAll(); closeModal(); drawDash(); toast("Produit ajouté.", "ok"); } catch (er) { toast(er.message, "bad"); } return; }
+    const shop = S.local.shops.find(s => s.id === f.dataset.shop), plan = settings().plans.find(p => p.name === shop.plan), k = "prod_" + shop.id;
+    if (plan && (S.local.items[k] || []).length >= plan.products) return toast(`Limite de ${plan.products} produits atteinte pour cette formule.`, "bad");
+    (S.local.items[k] ||= []).push({ id:uid(), title:v("title"), price:+v("price"), phone:v("phone"), city:v("city"), address:v("address") }); saveLocal(); closeModal(); drawDash(); toast("Produit ajouté.", "ok"); return;
+  }
+  if (f.id === "tarForm") {
+    const st = settings(); $$("[data-k]", f).forEach(i => { const [a, b, c] = i.dataset.k.split("."), n = +i.value; if (a === "plan") st.plans[+b][c] = n; else if (a === "dur") st.durations[+b][c] = n; else if (a === "ad") st.adPlans[+b][c] = n; else if (a === "pro") st.proPlans[+b][c] = n; else st[a] = n; });
+    saveLocal(); audit("Tarifs et paramètres modifiés"); toast("Tarifs enregistrés" + (BACKEND ? "" : " (local)") + ".", "ok");
+    if (BACKEND) api("/api/admin/settings", { method:"PUT", body:st }).catch(er => toast(er.message, "bad"));
+    return;
+  }
+});
+document.addEventListener("change", async e => {
+  const t = e.target;
+  if (t.id === "proofFile") { const f = t.files[0], m = fileOk(f); if (m) return toast(m, "bad"); if (!f) return; const r = S.local.requests.find(x => x.id === t.dataset.req);
+    try { if (BACKEND) { const fd = new FormData(); fd.append("proof", f); fd.append("reference", r.ref); await api(CONFIG.UPLOAD_API, { method:"POST", body:fd }); } r.proof = f.name; saveLocal(); toast("Preuve enregistrée. Elle ne vaut pas confirmation de paiement.", "ok"); await syncAll(); route(); } catch (er) { toast(er.message, "bad"); } }
+  if (t.id === "photoFile") { const f = t.files[0], m = fileOk(f); if (m) return toast(m, "bad"); if (!f) return;
+    if (BACKEND) { try { const fd = new FormData(); fd.append("photo", f); const r = await api("/api/me/photo", { method:"POST", body:fd }); S.user.photo = r.url; saveUser(); drawDash(); } catch (er) { toast(er.message, "bad"); } }
+    else { const rd = new FileReader(); rd.onload = () => { if (rd.result.length > 300000) return toast("Image trop lourde pour l'aperçu local.", "bad"); S.user.photo = rd.result; saveUser(); drawDash(); }; rd.readAsDataURL(f); } }
+});
+
+/* ==========================================================================
+   DigiZORA – NOUVEAUTÉS : formules, boutiques personnalisées, commandes,
+   comptes professionnels, animations
+   ========================================================================== */
+const TIERS = [
+  { k:"Basique", ic:"🟦", cls:"t0" }, { k:"Plus", ic:"✨", cls:"t1" },
+  { k:"Premium", ic:"💎", cls:"t2" }, { k:"VIP", ic:"👑", cls:"t3" }
+];
+const shopTier = s => { const t = s.tier ?? settings().plans.findIndex(p => p.name === s.plan); return Math.max(0, Math.min(3, t)); };
+const myMods = u => [...new Set([...(ROLE_MODS[u.role] || []), ...((S.local && S.local.userMods) || [])])];
+SAMPLE.rental = SAMPLE.rental || [];
+let SHOPCACHE = [];
+
+async function loadShops() {
+  let arr;
+  if (BACKEND) arr = (await api("/api/shops")).items || [];
+  else { const mine = S.local.shops.filter(s => s.status === "active").map(s => ({ ...s, local:true })); arr = [...mine, ...SAMPLE.shops.map(s => ({ ...s, sample:true }))]; }
+  arr.forEach(s => { s.tier = shopTier(s); });
+  arr.sort((a, b) => b.tier - a.tier);
+  SHOPCACHE = arr; return arr;
+}
+
+function shopCard(s) {
+  const t = shopTier(s), T = TIERS[t], tag = s.sample ? '<span class="badge gold">Exemple</span>' : "";
+  const cv = s.cover ? ` style="background-image:url('${esc(s.cover)}')"` : "";
+  return `<a class="card shopc ${T.cls} tilt" href="#/boutique/${esc(s.id)}"><div class="cv"${cv}><span class="tier ${T.cls}">${T.ic} ${T.k}</span></div>
+    <div class="lg">${s.logo ? `<img src="${esc(s.logo)}" alt="" loading="lazy">` : esc(s.emoji || "🏬")}</div>
+    <div class="bd"><h3>${esc(s.name)}</h3>${s.slogan ? `<p class="sl">${esc(s.slogan)}</p>` : ""}
+    <div class="meta"><span class="badge">${esc(s.cat)}</span><span class="badge">📍 ${esc(s.city)}</span>${tag}</div>
+    <p class="muted" style="font-size:.86rem">${esc((s.desc || "").slice(0, 90))}${(s.desc || "").length > 90 ? "…" : ""}</p><span class="visit">Visiter la boutique →</span></div></a>`;
+}
+
+function productCard(p, s) {
+  const t = shopTier(s), disc = p.old && p.old > p.p ? Math.round((1 - p.p / p.old) * 100) : 0;
+  const phone = p.phone || (s.wa ? "+" + s.wa : ""), wd = waDigits(phone), loc = [p.city || s.city, p.address].filter(Boolean).map(esc).join(" — ");
+  return `<div class="card pcard${p.sold ? " soldc" : ""}${t >= 2 ? " tilt" : ""}">
+    <div class="pimg">${p.photo ? `<img src="${esc(p.photo)}" alt="${esc(p.n)}" loading="lazy" decoding="async">` : "🛒"}${disc ? `<span class="promo">-${disc} %</span>` : ""}${p.sold ? '<span class="sold">VENDU</span>' : ""}</div>
+    <h3>${esc(p.n)}</h3>${p.desc ? `<p class="muted" style="font-size:.84rem">${esc(p.desc)}</p>` : ""}
+    <div class="pr">${money(p.p)}${disc ? ` <s>${money(p.old)}</s>` : ""}</div>
+    <div class="dl">🚚 Livraison : <b>${p.delivery ? money(p.delivery) : "Gratuite"}</b></div>
+    ${loc ? `<div class="cinfo"><div>📍 ${loc}</div></div>` : ""}
+    <div class="btns">${p.sold ? '<button class="btn line sm" disabled>Indisponible</button>' : `<button class="btn gold" data-act="order" data-shop="${esc(s.id)}" data-id="${esc(p.id || "")}">🛒 Commander</button>`}${wd && !p.sold ? `<a class="btn green sm" target="_blank" rel="noopener" href="https://wa.me/${wd}?text=${encodeURIComponent("Bonjour, je suis intéressé par : " + p.n + " (DigiZORA)")}">WhatsApp</a>` : ""}</div></div>`;
+}
+
+/* ---- Formules ---- */
+const FEAT_ROWS = [
+  ["Produits publiables", p => p.products >= 9999 ? "Illimité" : p.products],
+  ["Logo et photo du vendeur", () => 1, () => 1, () => 1, () => 1],
+  ["Commande en ligne + livraison", () => 1, () => 1, () => 1, () => 1],
+  ["Image de couverture", 0, 1, 1, 1],
+  ["Recherche et tri dans la boutique", 0, 1, 1, 1],
+  ["Visibilité", "Standard", "Améliorée", "Mise en avant", "Maximale (en tête)"],
+  ["Design 3D premium", 0, 0, 1, 1],
+  ["Bandeau d'annonce & prix promo", 0, 0, 1, 1],
+  ["Outils marketing (partage)", 0, 0, 1, 1],
+  ["Couleur personnalisée", 0, 0, 0, 1],
+  ["Page d'accueil + badge VIP", 0, 0, 0, 1],
+  ["Publicité incluse", 0, 0, 0, 1],
+  ["Support prioritaire", 0, 0, 0, 1]
+];
+function compareTable(st) {
+  const cell = (v, p) => typeof v === "function" ? (typeof v(p) === "number" && v(p) === 1 ? '<span class="y">✔</span>' : esc(v(p))) : v === 1 ? '<span class="y">✔</span>' : v === 0 ? '<span class="n">—</span>' : esc(v);
+  return `<div class="tw"><table class="cmp"><tr><th></th>${st.plans.map(p => `<th>${esc(p.name.replace("Boutique ", ""))}<br><small>${money(p.price)}/mois</small></th>`).join("")}</tr>` +
+    FEAT_ROWS.map(r => `<tr><td>${r[0]}</td>${st.plans.map((p, i) => `<td>${r.length === 2 ? cell(r[1], p) : cell(r[i + 1], p)}</td>`).join("")}</tr>`).join("") + `</table></div>`;
+}
+function planCards(st, dur) {
+  return st.plans.map((p, i) => {
+    const T = TIERS[p.tier ?? i], total = p.price * dur.months * (1 - dur.discount / 100);
+    return `<div class="card plan ${T.cls} tilt">${i === 2 ? '<span class="ribbon">POPULAIRE</span>' : i === 3 ? '<span class="ribbon" style="background:linear-gradient(135deg,#b8860b,#ff8a00)">HAUT DE GAMME</span>' : ""}
+      <span class="tier ${T.cls} inl">${T.ic} ${T.k}</span><h3>${esc(p.name)}</h3>
+      <div class="pr">${money(total)}</div><div class="muted" style="font-size:.8rem">pour ${dur.months} mois (${money(p.price)}/mois${dur.discount ? `, −${dur.discount} %` : ""})</div>
+      <ul>${p.features.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+      <button class="btn ${i >= 2 ? "gold" : "blue"}" data-act="rentShop" data-plan="${p.id}" data-dur="${dur.id}">Choisir ${esc(T.k)}</button></div>`;
+  }).join("");
+}
+pages.boutiques = async () => {
+  const shops = await loadShops(), st = settings(), ads = await loadAds();
+  return pageHead("Centre commercial virtuel", "Ouvrez votre boutique DigiZORA : 4 formules, du démarrage à l'expérience VIP. Vos clients commandent sans créer de compte.") + `
+  <div class="wrap">
+    ${adBanner(ads)}
+    <h2 class="t">Choisissez votre standing</h2>
+    <div class="filters"><label style="flex:none;align-self:center">Durée :</label>
+      <select id="durSel">${st.durations.map(d => `<option value="${d.id}">${d.label}${d.discount ? ` (−${d.discount} %)` : ""}</option>`).join("")}</select></div>
+    <div class="grid g4 plans4" id="plans">${planCards(st, st.durations[0])}</div>
+    <h2 class="t">Comparer les formules</h2>${compareTable(st)}
+    <p class="muted" style="margin-top:10px;font-size:.85rem">Tarifs modifiables par l'administration. La boutique est activée après vérification et validation du paiement. Pour changer de formule, reprenez le nom exact de votre boutique.</p>
+    <h2 class="t">Boutiques actives</h2>
+    <div class="filters"><input id="shopq" type="search" placeholder="Rechercher une boutique…"><select id="shopc"><option value="">Toutes catégories</option>${[...new Set(shops.map(s => s.cat))].map(c => `<option>${esc(c)}</option>`).join("")}</select></div>
+    <div class="grid g4" id="shoplist">${shops.map(shopCard).join("")}</div>
+  </div>`;
+};
+pages.boutiques.after = async () => {
+  $("#durSel")?.addEventListener("change", e => { const st = settings(); $("#plans").innerHTML = planCards(st, st.durations.find(d => d.id === e.target.value)); });
+  const shops = await loadShops();
+  const f = () => { const q = $("#shopq").value.toLowerCase(), c = $("#shopc").value; const r = shops.filter(s => (!c || s.cat === c) && (!q || (s.name + (s.desc || "")).toLowerCase().includes(q))); $("#shoplist").innerHTML = r.length ? r.map(shopCard).join("") : emptyBox("🔎", "Aucune boutique trouvée"); };
+  $("#shopq").addEventListener("input", f); $("#shopc").addEventListener("change", f);
+};
+
+/* ---- Boutique publique (présentation selon la formule) ---- */
+let CUR_SHOP = null;
+function prodList(s, q, sort) {
+  let r = [...(s.products || [])];
+  if (q) r = r.filter(p => (p.n + (p.desc || "")).toLowerCase().includes(q));
+  if (sort === "asc") r.sort((a, b) => a.p - b.p); else if (sort === "desc") r.sort((a, b) => b.p - a.p); else if (sort === "promo") r.sort((a, b) => (b.old ? 1 : 0) - (a.old ? 1 : 0));
+  return r;
+}
+pages.boutique = async id => {
+  const shops = await loadShops(); const s = shops.find(x => String(x.id) === id);
+  if (!s) return `<div class="wrap" style="padding-top:30px">${emptyBox("🏬", "Boutique introuvable", '<a class="btn blue sm" href="#/boutiques">Retour aux boutiques</a>')}</div>`;
+  if (!s.products) s.products = (S.local.items["prod_" + s.id] || []).map(p => ({ id:p.id, n:p.title, p:p.price, photo:p.photo, sold:p.sold, phone:p.phone, city:p.city, address:p.address, delivery:p.delivery, old:p.old_price, desc:p.descr }));
+  CUR_SHOP = s; const t = shopTier(s), T = TIERS[t], url = location.origin + "/b/" + s.id;
+  const ac = t >= 3 && s.color ? ` style="--ac:${esc(s.color)}"` : "";
+  return `<section class="shophero ${T.cls}"${ac}>${s.cover ? `<div class="cover" style="background-image:url('${esc(s.cover)}')"></div>` : ""}<div class="wrap"><div class="shopid">
+      <div class="lgb">${s.logo ? `<img src="${esc(s.logo)}" alt="Logo ${esc(s.name)}">` : esc(s.emoji || "🏬")}</div>
+      <div class="txt"><span class="tier ${T.cls} inl">${T.ic} ${t === 3 ? "Boutique VIP certifiée" : T.k}</span><h1>${esc(s.name)}</h1>${s.slogan ? `<div class="sl">${esc(s.slogan)}</div>` : ""}<p style="opacity:.9;margin-top:4px">${esc(s.desc || "")}</p><p style="opacity:.8;font-size:.9rem;margin-top:4px">${esc(s.cat)} • 📍 ${esc(s.city)}</p></div>
+      ${s.photo ? `<div class="own"><div class="avatar"><img src="${esc(s.photo)}" alt="Vendeur"></div><div><b>Votre vendeur</b><br><span style="opacity:.8">Réponse rapide</span></div></div>` : ""}
+    </div></div></section>
+  ${s.announce ? `<div class="announce"><div class="wrap"><span>📢 ${esc(s.announce)}</span></div></div>` : ""}
+  <div class="wrap">
+    <div class="sharebar">${s.wa ? `<a class="btn green" target="_blank" rel="noopener" href="https://wa.me/${esc(s.wa)}?text=${encodeURIComponent("Bonjour, je vous contacte depuis votre boutique DigiZORA.")}">💬 Contacter sur WhatsApp</a>` : ""}<button class="btn line" style="color:var(--blue)" data-act="copyLink">🔗 Copier le lien</button>
+      ${t >= 2 ? `<a class="btn blue sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent("Découvrez la boutique " + s.name + " sur DigiZORA : " + url)}">Partager WhatsApp</a><a class="btn blue sm" target="_blank" rel="noopener" href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}">Partager Facebook</a>` : ""}</div>
+    ${s.sample ? '<p class="notice">Boutique d\'exemple (mode aperçu).</p>' : ""}
+    <h2 class="t">Catalogue <small>${s.products.length} produit(s)</small></h2>
+    ${t >= 1 ? `<div class="filters"><input id="pq" type="search" placeholder="Rechercher un produit…"><select id="psort"><option value="">Tri : récents</option><option value="asc">Prix croissant</option><option value="desc">Prix décroissant</option>${t >= 2 ? '<option value="promo">Promotions d\'abord</option>' : ""}</select></div>` : ""}
+    <div id="plist" class="pgrid ${t >= 2 ? "big" : ""} ${t === 3 ? "t3p" : ""}">${s.products.length ? s.products.map(p => productCard(p, s)).join("") : emptyBox("🛒", "Aucun produit pour l'instant")}</div>
+    <p class="muted" style="margin-top:16px;font-size:.84rem">Commandez sans compte : indiquez votre nom, votre téléphone et votre adresse de livraison. Le vendeur vous contacte pour confirmer. Ne payez jamais avant d'avoir vérifié le produit ou la livraison.</p>
+  </div>`;
+};
+pages.boutique.after = () => {
+  const draw = () => { if (!CUR_SHOP) return; const l = prodList(CUR_SHOP, ($("#pq")?.value || "").toLowerCase(), $("#psort")?.value || ""); $("#plist").innerHTML = l.length ? l.map(p => productCard(p, CUR_SHOP)).join("") : emptyBox("🔎", "Aucun produit trouvé"); };
+  $("#pq")?.addEventListener("input", draw); $("#psort")?.addEventListener("change", draw);
+};
+
+/* ---- Commande ---- */
+function orderTotals() {
+  const f = $("#orderForm"); if (!f) return; const qty = Math.max(1, Math.min(50, Math.round(+f.elements.qty.value || 1))), unit = +f.dataset.unit, del = +f.dataset.del;
+  $("#ordtot").innerHTML = `<div style="display:flex;justify-content:space-between"><span>${qty} × ${money(unit)}</span><span>${money(unit * qty)}</span></div><div style="display:flex;justify-content:space-between"><span>🚚 Livraison</span><span>${del ? money(del) : "Gratuite"}</span></div><div class="tt"><span>Total à payer</span><span>${money(unit * qty + del)}</span></div>`;
+}
+actions.order = d => {
+  const s = SHOPCACHE.find(x => String(x.id) === d.shop), p = s && (s.products || []).find(x => String(x.id) === d.id);
+  if (!p || !p.id) return toast("Ce produit est un exemple : les commandes sont disponibles sur les vraies boutiques.", "bad");
+  if (!BACKEND) return toast("Les commandes nécessitent le serveur DigiZORA.", "bad");
+  const u = S.user || {};
+  openModal(`<h2>🛒 Commander</h2><div class="ordsum">${p.photo ? `<img src="${esc(p.photo)}" alt="">` : "<span style='font-size:2rem'>🛒</span>"}<div><b>${esc(p.n)}</b><div class="muted" style="font-size:.85rem">${esc(s.name)}</div></div></div>
+  <form id="orderForm" novalidate data-pid="${esc(p.id)}" data-unit="${p.p}" data-del="${p.delivery || 0}" data-shop="${esc(s.id)}">
+    ${field("name", "Votre nom complet", "text", `autocomplete="name" value="${esc(u.name || "")}"`)}
+    <div class="row">${field("phone", "Téléphone (+242…)", "tel", `autocomplete="tel" value="${esc(u.phone || "")}"`)}${field("qty", "Quantité", "number", 'min="1" max="50" value="1"')}</div>
+    ${selectF("city", "Ville de livraison", CITIES, "Choisir…")}
+    ${field("address", "Adresse de livraison (quartier, rue, repère)")}
+    <div class="f"><label for="note">Précisions (facultatif)</label><textarea id="note" name="note"></textarea></div>
+    <div class="totbox" id="ordtot"></div>
+    <button class="btn gold" style="width:100%" type="submit">✅ Confirmer la commande</button></form>`);
+  orderTotals();
+};
+document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#orderForm")) orderTotals(); });
+
+/* ---- Tableau de bord vendeur ---- */
+const ORD_ST = { new:["Nouvelle", "warn"], confirmed:["Confirmée", "ok"], shipped:["En livraison", "gold"], delivered:["Livrée", "ok"], cancelled:["Annulée", "bad"] };
+function shopTabHtml(u, L) {
+  const mine = L.shops.filter(s => s.userId === u.id), plans = settings().plans;
+  const h = `<h2 class="t" style="margin-top:0">Ma boutique</h2>`;
+  if (!mine.length) return h + emptyBox("🏬", "Aucune boutique active", `Choisissez une formule : après validation du paiement, votre boutique sera activée.<br><br><a class="btn gold" href="#/boutiques">Ouvrir une boutique</a>`);
+  return h + mine.map(s => {
+    const st = shopStatus(s), t = shopTier(s), T = TIERS[t], plan = plans.find(p => p.name === s.plan), prods = L.items["prod_" + s.id] || [], next = plans[t + 1];
+    return `<div class="card shopadm ${T.cls}" style="margin-bottom:16px">
+      <div class="sh-top"><div class="sh-lg">${s.logo ? `<img src="${esc(s.logo)}" alt="">` : esc(s.emoji || "🏬")}</div>
+      <div style="flex:1;min-width:190px"><h3>${esc(s.name)}</h3><span class="tier ${T.cls} inl">${T.ic} ${T.k}</span> <span class="badge ${st === "active" ? "ok" : "bad"}">${st === "active" ? "Active" : st === "expired" ? "Expirée" : "Suspendue"}</span>
+      <p class="muted" style="margin-top:6px">Expire le ${fdate(s.expires)} • Produits : ${prods.length}/${plan && plan.products < 9999 ? plan.products : "illimité"}</p></div>
+      <div class="btns2"><a class="btn line sm" style="color:var(--blue)" href="#/boutique/${esc(s.id)}">Voir</a><button class="btn blue sm" data-act="customizeShop" data-shop="${esc(s.id)}">🎨 Personnaliser</button><button class="btn gold sm" data-act="addProduct" data-shop="${esc(s.id)}">+ Produit</button><a class="btn line sm" style="color:var(--blue)" href="#/boutiques">${next ? "⬆ Améliorer" : "Renouveler"}</a></div></div>
+      ${next ? `<p class="notice" style="margin-top:10px">⬆ Passez à <b>${esc(next.name)}</b> pour débloquer : ${esc(next.features.slice(1, 4).join(" • "))}.</p>` : ""}
+      <div class="tw" style="margin-top:12px"><table><tr><th>Produit</th><th>Prix</th><th>Livraison</th><th>Statut</th><th></th></tr>${prods.length ? prods.map(p => `<tr><td>${p.photo ? `<img src="${esc(p.photo)}" alt="" style="width:38px;height:38px;object-fit:cover;border-radius:8px;vertical-align:middle;margin-right:8px">` : "🛒 "}${esc(p.title)}${p.phone ? `<div class="muted" style="font-size:.75rem">📞 ${esc(p.phone)}</div>` : ""}</td>
+        <td>${money(p.price)}${p.old_price ? `<div class="muted" style="font-size:.75rem"><s>${money(p.old_price)}</s></div>` : ""}</td><td>${p.delivery ? money(p.delivery) : "Gratuite"}</td><td>${p.sold ? '<span class="badge bad">Vendu</span>' : '<span class="badge ok">En stock</span>'}</td>
+        <td style="white-space:nowrap"><button class="btn line sm" style="color:var(--blue)" data-act="editProduct" data-shop="${esc(s.id)}" data-id="${esc(p.id)}">✏️ Modifier</button> <button class="btn line sm" style="color:var(--blue)" data-act="toggleSold" data-kind="prod" data-shop="${esc(s.id)}" data-id="${esc(p.id)}" data-sold="${p.sold ? 1 : 0}">${p.sold ? "↩ Stock" : "✔ Vendu"}</button> <button class="btn red sm" data-act="delProduct" data-shop="${esc(s.id)}" data-id="${esc(p.id)}">🗑</button></td></tr>`).join("") : '<tr><td colspan="5" class="muted">Aucun produit. Cliquez sur « + Produit ».</td></tr>'}</table></div></div>`;
+  }).join("");
+}
+function ordersTabHtml(L) {
+  const O = L.orders || []; if (!O.length) return emptyBox("📦", "Aucune commande", "Les commandes passées sur vos produits apparaîtront ici.");
+  return `<div class="grid g2">${O.map(o => { const S2 = ORD_ST[o.status] || ["?", ""], ph = String(o.phone || ""); return `<div class="card ord"><div class="oh"><b>${esc(o.ref)}</b><span class="badge ${S2[1]}">${S2[0]}</span></div>
+    <p class="muted" style="font-size:.8rem">${fdate(o.t)} • ${esc(o.shop || "")}</p><h3 style="margin:6px 0">${o.qty} × ${esc(o.product)}</h3>
+    <div class="cinfo"><div>👤 <b>${esc(o.name)}</b></div><div>📞 ${telLink(ph)}</div><div>📍 ${esc([o.city, o.address].filter(Boolean).join(" — "))}</div>${o.note ? `<div>📝 ${esc(o.note)}</div>` : ""}</div>
+    <p style="margin-top:6px">Total : <b>${money(o.total)}</b> <span class="muted">(livraison ${o.delivery ? money(o.delivery) : "gratuite"})</span></p>
+    <div class="ob"><a class="btn green sm" target="_blank" rel="noopener" href="https://wa.me/${esc(waDigits(ph))}?text=${encodeURIComponent("Bonjour " + o.name + ", votre commande " + o.ref + " (" + o.product + ") sur DigiZORA.")}">WhatsApp client</a>
+    ${o.status === "new" ? `<button class="btn blue sm" data-act="orderStatus" data-id="${esc(o.id)}" data-s="confirmed">Confirmer</button>` : ""}${["new", "confirmed"].includes(o.status) ? `<button class="btn gold sm" data-act="orderStatus" data-id="${esc(o.id)}" data-s="shipped">En livraison</button>` : ""}${["new", "confirmed", "shipped"].includes(o.status) ? `<button class="btn line sm" style="color:var(--ok)" data-act="orderStatus" data-id="${esc(o.id)}" data-s="delivered">Livrée</button><button class="btn red sm" data-act="orderStatus" data-id="${esc(o.id)}" data-s="cancelled">Annuler</button>` : ""}</div></div>`; }).join("")}</div>`;
+}
+function proTabHtml(L) {
+  const P = L.pro || [], pp = settings().proPlans || [];
+  return `<div class="row" style="margin-bottom:14px"><a class="btn gold" href="#/comptes-pro">+ Demander un compte professionnel</a></div>` + (P.length ? `<div class="grid g2">${P.map(a => { const pl = pp.find(x => x.id === a.sector) || {}, act = a.expires > Date.now(); return `<div class="card"><h3>${pl.icon || "💼"} ${esc(pl.label || a.sector)}</h3><p>${esc(a.company || "")}</p><span class="badge ${act ? "ok" : "bad"}">${act ? "Actif" : "Expiré"}</span> <span class="muted">jusqu'au ${fdate(a.expires)}</span><div class="row" style="margin-top:10px">${act && pl.module ? `<button class="btn blue sm" data-act="publish" data-mod="${esc(pl.module)}">+ Publier</button>` : ""}<a class="btn line sm" style="color:var(--blue)" href="#/comptes-pro">${act ? "Prolonger" : "Renouveler"}</a></div></div>`; }).join("")}</div>` : emptyBox("💼", "Aucun compte professionnel", "Immobilier, transport, location de véhicules, services : demandez votre compte pro."));
+}
+
+/* ---- Produits : ajout / modification ---- */
+function prodFormHtml(shopId, p) {
+  const sh = S.local.shops.find(x => x.id === shopId) || {}, t = shopTier(sh), e = !!p;
+  const dels = [0, 1000, 2000, 3000, 5000, 10000];
+  return `<h2>${e ? "✏️ Modifier le produit" : "Ajouter un produit"}</h2><form id="prodForm2" data-shop="${esc(shopId)}" ${e ? `data-pid="${esc(p.id)}"` : ""} novalidate style="margin-top:12px">
+    ${field("title", "Nom du produit", "text", `value="${esc(p?.title || "")}"`)}
+    <div class="row">${field("price", "Prix (FCFA)", "number", `min="0" value="${p ? p.price : ""}"`)}${t >= 2 ? field("old_price", "Ancien prix barré (promo)", "number", `min="0" value="${p?.old_price || ""}" placeholder="Facultatif"`) : `<div class="f"><label>Prix promotionnel</label><div class="notice info" style="font-size:.8rem">🔒 Premium / VIP</div></div>`}</div>
+    <div class="f"><label for="delivery">🚚 Frais de livraison de ce produit (FCFA) — 0 = gratuite</label><input id="delivery" name="delivery" type="number" min="0" step="500" value="${p ? p.delivery || 0 : 0}"><div class="chipsrow">${dels.map(v => `<button type="button" class="chipb" data-act="setDelivery" data-v="${v}">${v ? v.toLocaleString("fr-FR") : "Gratuite"}</button>`).join("")}</div><div class="err" data-err="delivery"></div></div>
+    <div class="f"><label for="pdesc">Description${t >= 1 ? "" : " (facultatif)"}</label><textarea id="pdesc" name="desc" maxlength="600">${esc(p?.descr || "")}</textarea></div>
+    <div class="f"><label for="photo">📷 Photo du produit ${e && p.photo ? "(laisser vide pour conserver l'actuelle)" : "— recommandée pour mieux vendre"}</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"><div class="err" data-err="photo"></div></div>
+    ${field("phone", "Téléphone / WhatsApp du produit", "tel", `value="${esc(p?.phone || "")}" placeholder="Par défaut : ${esc(sh.wa ? "+" + sh.wa : "numéro de la boutique")}"`)}
+    ${selectF("city", "Localité", CITIES).replace(`<option>${esc(p?.city || sh.city || "")}</option>`, `<option selected>${esc(p?.city || sh.city || "")}</option>`)}
+    ${field("address", "Adresse précise (facultatif)", "text", `value="${esc(p?.address || "")}"`)}
+    <button class="btn blue" style="width:100%" type="submit">${e ? "Enregistrer les modifications" : "Ajouter le produit"}</button></form>`;
+}
+actions.addProduct = d => openModal(prodFormHtml(d.shop, null));
+actions.editProduct = d => { const p = (S.local.items["prod_" + d.shop] || []).find(x => String(x.id) === d.id); if (p) openModal(prodFormHtml(d.shop, p)); };
+actions.setDelivery = d => { const i = $("#delivery"); if (i) i.value = d.v; };
+{ const _del = actions.delProduct; actions.delProduct = d => { if (!confirm("Supprimer définitivement ce produit ?")) return; return _del(d); }; }
+
+/* ---- Personnalisation de la boutique ---- */
+actions.customizeShop = d => {
+  const s = S.local.shops.find(x => x.id === d.shop); if (!s) return; const t = shopTier(s), T = TIERS[t];
+  const img = (u, lbl) => u ? `<div class="muted" style="font-size:.78rem;margin:4px 0">Actuel : <img src="${esc(u)}" alt="" style="height:34px;border-radius:6px;vertical-align:middle"> <label style="font-weight:400"><input type="checkbox" name="rm_${lbl}" value="1" style="width:auto"> retirer</label></div>` : "";
+  openModal(`<h2>🎨 Personnaliser « ${esc(s.name)} »</h2><p class="muted" style="margin:4px 0 10px">Formule <b>${T.ic} ${T.k}</b> : la présentation s'adapte à votre abonnement.</p>
+  <form id="shopEditForm" data-shop="${esc(s.id)}" novalidate>
+    <div class="f"><label for="logo">🏷️ Logo de la boutique</label><input id="logo" type="file" accept="image/jpeg,image/png,image/webp">${img(s.logo, "logo")}</div>
+    <div class="f"><label for="oph">🙂 Photo du vendeur</label><input id="oph" type="file" accept="image/jpeg,image/png,image/webp">${img(s.photo, "photo")}</div>
+    <div class="f"><label for="cover">🖼️ Image de couverture ${t >= 1 ? "" : "— 🔒 à partir de la formule Plus"}</label><input id="cover" type="file" accept="image/jpeg,image/png,image/webp" ${t >= 1 ? "" : "disabled"}>${img(s.cover, "cover")}</div>
+    ${field("slogan", "Slogan de la boutique", "text", `maxlength="80" value="${esc(s.slogan || "")}"`)}
+    ${t >= 2 ? field("announce", "📢 Bandeau d'annonce / promotion en cours", "text", `maxlength="160" value="${esc(s.announce || "")}"`) : `<div class="f"><label>📢 Bandeau d'annonce</label><div class="notice info" style="font-size:.8rem">🔒 Réservé aux formules Premium et VIP</div></div>`}
+    ${t >= 3 ? `<div class="f"><label for="color">🎨 Couleur de votre boutique VIP</label><input id="color" name="color" type="color" value="${esc(s.color || "#b8860b")}" style="height:44px;padding:3px"></div>` : ""}
+    <div class="f"><label for="sdesc">Description</label><textarea id="sdesc" name="desc">${esc(s.desc || "")}</textarea><div class="err" data-err="desc"></div></div>
+    <div class="row">${field("wa", "WhatsApp de la boutique", "tel", `value="${esc(s.wa || "")}"`)}${selectF("city", "Ville", CITIES).replace(`<option>${esc(s.city || "")}</option>`, `<option selected>${esc(s.city || "")}</option>`)}</div>
+    <button class="btn blue" style="width:100%" type="submit">Enregistrer</button></form>`);
+};
+
+actions.orderStatus = async d => { try { await api("/api/orders/" + encodeURIComponent(d.id) + "/status", { method:"POST", body:{ status:d.s } }); await syncAll(); drawDash(); toast("Commande mise à jour.", "ok"); } catch (e) { toast(e.message, "bad"); } };
+
+/* ---- Comptes professionnels payants ---- */
+function proCards(st, dur) {
+  return (st.proPlans || []).map(p => { const total = p.price * dur.months * (1 - dur.discount / 100);
+    return `<div class="card plan t1 tilt"><div style="font-size:2.4rem">${p.icon}</div><h3>${esc(p.label)}</h3><p class="muted" style="font-size:.86rem;margin:6px 0">${esc(p.desc)}</p>
+    <div class="pr">${money(total)}</div><div class="muted" style="font-size:.8rem">pour ${dur.months} mois (${money(p.price)}/mois${dur.discount ? `, −${dur.discount} %` : ""})</div>
+    <ul><li>Droit de publier dans la rubrique dédiée</li><li>Badge « ✔ Pro » et passage en tête des listes</li><li>Contacts directs : appel et WhatsApp</li><li>Validation par l'équipe DigiZORA</li></ul>
+    <button class="btn gold" data-act="proRequest" data-sector="${esc(p.id)}" data-dur="${dur.id}">Demander ce compte</button></div>`; }).join("");
+}
+pages["comptes-pro"] = async () => {
+  const st = settings();
+  return pageHead("💼 Comptes professionnels", "Immobilier, transport, location de véhicules et autres services : ouvrez un compte pro pour publier, gagner en visibilité et inspirer confiance.") + `<div class="wrap">
+    <div class="filters"><label style="flex:none;align-self:center">Durée :</label><select id="proDur">${st.durations.map(d => `<option value="${d.id}">${d.label}${d.discount ? ` (−${d.discount} %)` : ""}</option>`).join("")}</select></div>
+    <div class="grid g4 plans4" id="proplans">${proCards(st, st.durations[0])}</div>
+    <h2 class="t">Comment ça marche ?</h2>
+    <div class="steps"><div class="stepc"><div class="e">📝</div><b>Demande</b><p class="muted">Choisissez votre secteur et remplissez le formulaire.</p></div><div class="stepc"><div class="e">💳</div><b>Paiement</b><p class="muted">Réglez par WhatsApp / Mobile Money et envoyez la preuve.</p></div><div class="stepc"><div class="e">✅</div><b>Validation</b><p class="muted">L'administration vérifie le paiement et active votre compte.</p></div><div class="stepc"><div class="e">🚀</div><b>Publication</b><p class="muted">Publiez vos offres avec le badge « Pro ».</p></div></div>
+    <p class="notice" style="margin-top:16px">Le compte professionnel est activé uniquement après validation du paiement. Tarifs et durées définis par l'administration.</p></div>`;
+};
+pages["comptes-pro"].after = () => { $("#proDur")?.addEventListener("change", e => { const st = settings(); $("#proplans").innerHTML = proCards(st, st.durations.find(d => d.id === e.target.value)); }); };
+actions.proRequest = d => {
+  if (!isLogged()) return needLogin("Créez un compte ou connectez-vous pour demander un compte professionnel.");
+  const st = settings(), p = st.proPlans.find(x => x.id === d.sector), du = st.durations.find(x => x.id === d.dur), u = S.user;
+  openModal(`<h2>${p.icon} Compte pro — ${esc(p.label)}</h2><p class="muted">${du.label} • ${money(p.price * du.months * (1 - du.discount / 100))}</p>
+  <form id="proForm" data-sector="${esc(p.id)}" data-dur="${esc(du.id)}" novalidate style="margin-top:12px">${field("company", "Nom de l'entreprise / de l'activité")}<div class="row">${field("phone", "Téléphone professionnel", "tel", `value="${esc(u.phone || "")}"`)}${selectF("city", "Ville", CITIES, "Choisir…")}</div>
+  <div class="f"><label for="pdesc">Présentation de l'activité</label><textarea id="pdesc" name="desc"></textarea><div class="err" data-err="desc"></div></div><button class="btn gold" style="width:100%" type="submit">Continuer vers le paiement</button></form>`);
+};
+
+/* ---- Soumissions des nouveaux formulaires ---- */
+document.addEventListener("submit", async e => {
+  const f = e.target, v = id => (f.elements[id]?.value || "").trim();
+  if (f.id === "orderForm") {
+    const errs = {}; if (v("name").length < 3) errs.name = "Nom trop court."; if (!phoneOk(v("phone"))) errs.phone = "Téléphone invalide."; if (v("address").length < 5) errs.address = "Indiquez votre adresse de livraison.";
+    if (!showErrs(f, errs)) return;
+    try {
+      const r = await api("/api/orders", { method:"POST", body:{ productId:f.dataset.pid, name:v("name"), phone:v("phone"), address:v("address"), city:v("city"), qty:v("qty") || 1, note:v("note") } });
+      const msg = `Bonjour ${r.shop}, je viens de commander sur DigiZORA : ${r.qty} × ${r.product}. Référence ${r.ref}. Total ${money(r.total)} (livraison ${r.delivery ? money(r.delivery) : "gratuite"}). Mon nom : ${v("name")}, tél : ${v("phone")}. Adresse : ${v("address")}.`;
+      openModal(`<div style="text-align:center"><div style="font-size:3.4rem">✅</div><h2>Commande enregistrée !</h2><p style="margin:8px 0">Référence : <b style="font-size:1.2rem">${esc(r.ref)}</b></p><p>${r.qty} × ${esc(r.product)}<br>Total : <b>${money(r.total)}</b> <span class="muted">(livraison ${r.delivery ? money(r.delivery) : "gratuite"})</span></p>
+      <p class="muted" style="margin:10px 0">Le vendeur « ${esc(r.shop)} » a été prévenu et vous contactera au ${esc(v("phone"))} pour confirmer la livraison. Conservez votre référence.</p>
+      ${r.wa ? `<a class="btn green" style="width:100%" target="_blank" rel="noopener" href="https://wa.me/${esc(r.wa)}?text=${encodeURIComponent(msg)}">💬 Prévenir le vendeur sur WhatsApp</a>` : ""}<button class="btn line" style="width:100%;margin-top:8px;color:var(--blue)" data-act="closeModal">Fermer</button></div>`);
+    } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "prodForm2") {
+    const errs = {}; if (v("title").length < 2) errs.title = "Nom requis."; if (v("price") === "" || +v("price") < 0) errs.price = "Prix invalide."; if (v("delivery") !== "" && +v("delivery") < 0) errs.delivery = "Montant invalide.";
+    { const pm = fileOk($("#photo")?.files[0]); if (pm) errs.photo = pm; } if (v("phone") && !phoneOk(v("phone"))) errs.phone = "Numéro invalide.";
+    if (!showErrs(f, errs)) return;
+    if (!BACKEND) return toast("La gestion des produits nécessite le serveur DigiZORA.", "bad");
+    const fd = new FormData(); fd.append("title", v("title")); fd.append("price", v("price")); fd.append("delivery", v("delivery") || "0"); fd.append("desc", f.elements.desc.value);
+    if (f.elements.old_price && v("old_price")) fd.append("old_price", v("old_price")); ["phone", "city", "address"].forEach(k => v(k) && fd.append(k, v(k)));
+    const ph = $("#photo")?.files[0]; if (ph) fd.append("photo", ph);
+    try { const sid = encodeURIComponent(f.dataset.shop); if (f.dataset.pid) await api(`/api/shops/${sid}/products/${encodeURIComponent(f.dataset.pid)}`, { method:"PUT", body:fd }); else await api(`/api/shops/${sid}/products`, { method:"POST", body:fd });
+      await syncAll(); closeModal(); drawDash(); toast(f.dataset.pid ? "Produit modifié." : "Produit ajouté.", "ok"); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "shopEditForm") {
+    const errs = {}; if (f.elements.desc.value.trim().length < 10) errs.desc = "Description trop courte (10 caractères min.)."; if (!showErrs(f, errs)) return;
+    if (!BACKEND) return toast("La personnalisation nécessite le serveur DigiZORA.", "bad");
+    for (const id of ["logo", "oph", "cover"]) { const m = fileOk($("#" + id)?.files[0]); if (m) return toast(m, "bad"); }
+    const fd = new FormData(); fd.append("desc", f.elements.desc.value.trim()); fd.append("wa", v("wa")); fd.append("city", v("city")); fd.append("slogan", v("slogan"));
+    if (f.elements.announce) fd.append("announce", v("announce")); if (f.elements.color) fd.append("color", v("color"));
+    ["logo", "photo", "cover"].forEach(k => { if (f.elements["rm_" + k]?.checked) fd.append("rm_" + k, "1"); });
+    const L = $("#logo")?.files[0], P = $("#oph")?.files[0], C = $("#cover")?.files[0]; if (L) fd.append("logo", L); if (P) fd.append("photo", P); if (C) fd.append("cover", C);
+    try { await api("/api/shops/" + encodeURIComponent(f.dataset.shop), { method:"PUT", body:fd }); await syncAll(); closeModal(); drawDash(); toast("Boutique mise à jour.", "ok"); } catch (er) { toast(er.message, "bad"); }
+    return;
+  }
+  if (f.id === "proForm") {
+    const errs = {}; if (v("company").length < 3) errs.company = "Nom trop court."; if (!phoneOk(v("phone"))) errs.phone = "Téléphone invalide."; if (!v("city")) errs.city = "Choisissez une ville."; if (f.elements.desc.value.trim().length < 10) errs.desc = "Décrivez votre activité (10 caractères min.).";
+    if (!showErrs(f, errs)) return;
+    const st = settings(), p = st.proPlans.find(x => x.id === f.dataset.sector), du = st.durations.find(x => x.id === f.dataset.dur);
+    createRequest(`Compte professionnel – ${p.label} (${du.label})`, Math.round(p.price * du.months * (1 - du.discount / 100)), { durId:du.id, proData:{ sector:p.id, company:v("company"), phone:v("phone"), city:v("city"), desc:f.elements.desc.value.trim() } });
+    return;
+  }
+});
+
+/* ---- Animations : apparition au défilement + inclinaison 3D ---- */
+(function () {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  document.addEventListener("pointermove", e => { if (e.pointerType === "touch") return; const el = e.target.closest && e.target.closest(".tilt"); if (!el) return; const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - .5, y = (e.clientY - r.top) / r.height - .5; el.style.transform = `perspective(900px) rotateX(${(-y * 8).toFixed(2)}deg) rotateY(${(x * 10).toFixed(2)}deg) translateY(-4px)`; });
+  document.addEventListener("pointerout", e => { const el = e.target.closest && e.target.closest(".tilt"); if (el && !el.contains(e.relatedTarget)) el.style.transform = ""; });
+  if (!("IntersectionObserver" in window)) return;
+  const SEL = ".card,.shopc,h2.t,.chip,.kpi,.stepc,.vipband,.promoband";
+  const io = new IntersectionObserver(es => es.forEach(en => { if (en.isIntersecting) { const el = en.target; io.unobserve(el); el.classList.add("in"); setTimeout(() => el.classList.remove("rv", "in"), 900); } }), { threshold:.06 });
+  const scan = root => { if (!root.querySelectorAll) return; const list = root.matches && root.matches(SEL) ? [root, ...root.querySelectorAll(SEL)] : root.querySelectorAll(SEL); list.forEach(el => { if (!el.dataset.rv && !el.closest("#modal")) { el.dataset.rv = 1; el.classList.add("rv"); io.observe(el); } }); };
+  new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && scan(n)))).observe($("#view"), { childList:true, subtree:true });
+})();
+
+/* ==========================================================================
+   11. DÉMARRAGE
+   ========================================================================== */
+document.addEventListener("change", async e => {
+  const sel = e.target.closest && e.target.closest("select[data-urole]"); if (!sel) return;
+  try { await api("/api/admin/users/" + encodeURIComponent(sel.dataset.urole), { method:"POST", body:{ action:"role", role:sel.value } }); await syncAll(); drawAdmin(); toast("Type de compte modifié.", "ok"); }
+  catch (er) { toast(er.message, "bad"); drawAdmin(); }
+});
+(async function init() {
+  if (!CONFIG.API_URL) { try { const h = await fetch("/api/health", { credentials:"include" }); const j = h.ok ? await h.json() : null; BACKEND = !!(j && j.app === "digizora"); } catch { BACKEND = false; } }
+  if (BACKEND) {
+    S.local = EMPTY_LOCAL(); S.user = null;
+    try { S.local.settings = await api("/api/settings"); } catch { /* tarifs par défaut */ }
+    try { const r = await api("/api/auth/me"); S.user = r.user || null; } catch { S.user = null; }
+    await syncAll();
+  }
+  else if (S.user && !S.user.preview) { S.user = null; saveUser(); }
+  if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+  route();
+})();
+</script>
+</body>
+</html>
