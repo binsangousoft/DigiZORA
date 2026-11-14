@@ -5,7 +5,7 @@
   "description": "DigiZORA - plateforme de commerce et services en ligne",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node start.js"
   },
   "engines": {
     "node": ">=22.13.0"

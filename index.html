@@ -363,6 +363,32 @@ h2.t{position:relative;padding-left:16px}h2.t::before{content:"";position:absolu
   .shopid .lgb{width:80px;height:80px;font-size:2.2rem}
 }
 
+/* ============================ AJOUT : FACTURES / JOURNAL ============================ */
+#modal .box:has(.pdwrap){width:min(860px,100%)}
+.pdbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 34px 12px 0}
+.pd{background:#fff;color:#0d1b3d;font-size:13px;line-height:1.45;max-width:800px;margin:0 auto;padding:20px;border:1px solid var(--line);border-radius:12px}
+.pd-h{display:flex;gap:14px;align-items:center}.pd-h img{height:56px;max-width:140px;object-fit:contain}
+.pd-h b{display:block;font-size:1.15rem;color:var(--blue)}.pd-h span{display:block;color:var(--muted);font-size:.82rem}
+.pd-bar{height:3px;background:var(--gold);margin:12px 0 0;border-radius:2px}
+.pd-ti{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--blue);color:#fff;padding:7px 12px;font-weight:800;margin-bottom:12px}.pd-ti span{font-weight:700;opacity:.95}
+.pd-i{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px}.pd-i>div{flex:1;min-width:200px;background:var(--bg);border-left:3px solid var(--gold);padding:10px 12px}
+.pd small{display:block;text-transform:uppercase;font-size:.66rem;letter-spacing:.5px;color:var(--muted);font-weight:700}
+.pd-b b,.pd-m b{display:block}.pd-b span{display:block;font-size:.88rem}.pd-m>div{margin-bottom:4px}
+.pd-k{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}.pd-k>div{background:var(--bg);border-top:3px solid var(--gold);padding:10px}.pd-k b{display:block;font-size:1.05rem;color:var(--blue)}
+.pd-tb{width:100%;border-collapse:collapse;font-size:.88rem;margin-bottom:8px}.pd-tb th{background:var(--blue);color:#fff;text-align:left;padding:7px 8px}.pd-tb td{padding:7px 8px;border-bottom:1px solid var(--line)}.pd-tb tbody tr:nth-child(odd) td{background:var(--bg)}.pd .r{text-align:right}
+.pd-to{margin-left:auto;width:min(270px,100%)}.pd-to>div{display:flex;justify-content:space-between;padding:4px 10px;border-bottom:1px solid var(--line);font-size:.9rem}.pd-to .g{background:var(--blue);color:#fff;font-size:1rem;font-weight:800;padding:8px 10px}
+.pd-bl{margin-top:14px}.pd-bl h4{color:var(--blue);margin-bottom:4px;border-bottom:2px solid var(--gold);display:inline-block}.pd-bl p{white-space:pre-line;font-size:.9rem}
+.pd-s{display:flex;justify-content:space-between;gap:20px;margin-top:38px}.pd-s div{width:44%;font-size:.78rem;color:var(--muted)}.pd-s span{display:block;border-top:1px solid var(--muted);margin-bottom:3px}
+.pd-f{margin-top:12px;font-size:.78rem;color:var(--muted)}
+.pd-ft{margin-top:16px;padding-top:8px;border-top:1px solid var(--line);text-align:center;font-size:.7rem;color:var(--muted)}
+#pdoc{display:none}
+@media print{
+  body.printing>*:not(#pdoc){display:none!important}
+  body.printing #pdoc{display:block!important}
+  body.printing .pd{border:0;padding:0;max-width:none;border-radius:0}
+  .pd,.pd *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:14mm}
+}
 </style>
 </head>
 <body>
@@ -490,8 +516,27 @@ const audit = a => { S.local.audit.unshift({ t:Date.now(), who:S.user?.name || "
 const notify = (text) => { S.local.notifs.unshift({ id:uid(), t:Date.now(), text, read:false }); saveLocal(); renderChrome(); };
 
 /* ---- Client API (utilisé uniquement si CONFIG.API_URL est renseigné) ---- */
+/* Réduit les photos (téléphone : 3 à 8 Mo) à ~150 Ko avant l'envoi : plus rapide, moins de données consommées, stockage économisé. */
+async function shrinkImg(file) {
+  try {
+    if (!/^image\/(jpeg|png|webp)$/.test(file.type) || file.size < 250 * 1024) return file;
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height); x.drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise(r => c.toBlob(r, "image/jpeg", 0.8));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], (file.name || "photo").replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch { return file; }
+}
+async function shrinkForm(fd) {
+  const out = new FormData();
+  for (const [k, v] of fd.entries()) { if (v instanceof File) { const f = await shrinkImg(v); out.append(k, f, f.name); } else out.append(k, v); }
+  return out;
+}
 async function api(path, opts = {}) {
   if (!BACKEND) { const e = new Error("NO_BACKEND"); e.code = "NO_BACKEND"; throw e; }
+  if (opts.body instanceof FormData) opts = { ...opts, body: await shrinkForm(opts.body) };
   const h = { "Accept":"application/json" };
   if (!(opts.body instanceof FormData)) h["Content-Type"] = "application/json";
   const csrf = document.cookie.split("; ").find(c => c.startsWith("XSRF-TOKEN="));
@@ -507,7 +552,7 @@ async function api(path, opts = {}) {
 }
 const previewNote = () => toast("Mode aperçu : enregistré uniquement sur cet appareil. Connectez le backend pour publier réellement.", "");
 /* Synchronisation : en mode réel, les données personnelles viennent du serveur (jamais du navigateur) */
-const EMPTY_LOCAL = () => ({ ads:[], outbox:[], items:{}, requests:[], notifs:[], reports:[], apps:[], received:[], msgs:[], shops:[], audit:[], users:[], adminMsgs:[], orders:[], pro:[], userMods:[], jobprofile:null, settings:S.local.settings });
+const EMPTY_LOCAL = () => ({ ads:[], outbox:[], items:{}, requests:[], notifs:[], reports:[], apps:[], received:[], msgs:[], shops:[], audit:[], users:[], adminMsgs:[], orders:[], docs:[], pro:[], userMods:[], jobprofile:null, settings:S.local.settings });
 async function syncAll() {
   if (!BACKEND || !S.user) return;
   try { const d = await api("/api/sync"); Object.assign(S.local, EMPTY_LOCAL(), d); S.stats = d.stats || null; }
@@ -914,7 +959,7 @@ pages["tableau-de-bord"] = async () => {
   if (!isLogged()) return `<div class="wrap" style="padding-top:30px">${emptyBox("🔒", "Connectez-vous pour accéder à votre espace", '<a class="btn blue sm" href="#/connexion">Se connecter</a>')}</div>`;
   const u = S.user, mods = myMods(u);
   const tabs = [["overview","📊 Vue d'ensemble"], ["profile","👤 Profil"]];
-  if (["commercant","entreprise","particulier"].includes(u.role)) tabs.push(["shop","🏬 Ma boutique"], ["orders","📦 Commandes" + ((S.local.orders || []).some(o => o.status === "new") ? " ●" : "")]);
+  if (["commercant","entreprise","particulier"].includes(u.role)) tabs.push(["shop","🏬 Ma boutique"], ["orders","📦 Commandes" + ((S.local.orders || []).some(o => o.status === "new") ? " ●" : "")], ["docs","🧾 Factures & devis"], ["journal","📒 Journal de caisse"]);
   if (mods.length) tabs.push(["posts","📝 Mes publications"]);
   if (["demandeur"].includes(u.role)) tabs.push(["jobprofile","🧑‍💼 Profil emploi"]);
   tabs.push(["ads","📢 Publicités"]); if (u.role !== "admin") tabs.push(["pro","💼 Compte pro"]);
@@ -930,10 +975,9 @@ function drawDash() {
   const b = $("#dbody"); if (!b) return; const u = S.user, L = S.local;
   const myReq = L.requests.filter(r => r.userId === u.id);
   const note = BACKEND ? "" : '<p class="notice" style="margin-bottom:14px">Mode aperçu : ces données sont locales à cet appareil.</p>';
-  let h = note;
+  let h = note + expiryBanner();
   if (dashTab === "overview") {
     h += `<div class="grid g4"><div class="kpi"><b>${myItems().length}</b><span>Publications</span></div><div class="kpi"><b>${S.favs.length}</b><span>Favoris</span></div><div class="kpi"><b>${myReq.length}</b><span>Demandes de paiement</span></div><div class="kpi"><b>${L.notifs.filter(n => !n.read).length}</b><span>Notifications non lues</span></div></div>`;
-    if (["commercant","entreprise"].includes(u.role)) { const exp = L.shops.filter(s => s.userId === u.id && s.expires && s.expires - Date.now() < 7 * DAY && s.expires > Date.now()); exp.forEach(s => h += `<p class="notice" style="margin-top:14px">⏰ Votre boutique « ${esc(s.name)} » expire le ${fdate(s.expires)}. <a href="#/boutiques"><u>Renouveler</u></a></p>`); }
     { const nOrd = (L.orders || []).filter(o => o.status === "new").length; if (nOrd) h += `<p class="notice" style="margin-top:14px">📦 Vous avez <b>${nOrd}</b> nouvelle(s) commande(s). <button class="btn gold sm" data-act="dtab" data-t="orders">Voir les commandes</button></p>`; }
     h += `<h2 class="t">Raccourcis</h2><div class="row">${myMods(u).map(m => `<button class="btn blue" data-act="publish" data-mod="${m}">+ ${MODS[m].title}</button>`).join("")}</div>`;
   }
@@ -942,6 +986,8 @@ function drawDash() {
     <p class="muted" style="margin-top:10px;font-size:.85rem">Type de compte : <b>${ROLES[u.role]}</b>. La vérification du compte est effectuée par l'administration.</p>${BACKEND ? `<hr style="margin:16px 0;border:0;border-top:1px solid var(--line)"><h3>Changer le mot de passe</h3><form id="pwForm" novalidate style="margin-top:10px">${field("current", "Mot de passe actuel", "password", 'autocomplete="current-password"')}${field("password", "Nouveau mot de passe (8 caractères min., lettres et chiffres)", "password", 'autocomplete="new-password"')}<button class="btn line" style="color:var(--blue)" type="submit">Changer le mot de passe</button></form>` : ""}</div>`;
   if (dashTab === "shop") h += shopTabHtml(u, L);
   if (dashTab === "orders") h += ordersTabHtml(L);
+  if (dashTab === "docs") h += docsTabHtml(u, L);
+  if (dashTab === "journal") h += journalTabHtml(u, L);
   if (dashTab === "pro") h += proTabHtml(L);
   if (dashTab === "posts") { const mine = myItems().filter(([m]) => myMods(u).includes(m));
     h += `<div class="row" style="margin-bottom:14px">${myMods(u).map(m => `<button class="btn blue sm" data-act="publish" data-mod="${m}">+ ${MODS[m].title}</button>`).join("")}</div>` +
@@ -970,7 +1016,7 @@ let adminTab = "stats";
 pages.admin = async () => {
   await syncAll();
   if (!isLogged() || S.user.role !== "admin") return `<div class="wrap" style="padding-top:30px">${emptyBox("🔒", "Accès réservé aux administrateurs", "Les droits sont contrôlés par le serveur. Ce contrôle d'interface n'est pas une protection suffisante en soi.")}</div>`;
-  const tabs = [["stats","📊 Statistiques"],["req","💳 Demandes & paiements"],["shops","🏬 Boutiques"],["users","👥 Utilisateurs"],["mod","🛡️ Modération"],["tariffs","💰 Tarifs & paramètres"],["ads","📢 Publicités"],["outbox","📨 Bienvenue"],["msgs","✉️ Messages & réclamations"],["audit","📜 Journal"]];
+  const tabs = [["stats","📊 Statistiques"],["req","💳 Demandes & paiements"],["shops","🏬 Boutiques"],["proforma","🧾 Proforma boutiques"],["subs","📅 Abonnements"],["users","👥 Utilisateurs"],["mod","🛡️ Modération"],["tariffs","💰 Tarifs & paramètres"],["ads","📢 Publicités"],["outbox","📨 Bienvenue"],["msgs","✉️ Messages & réclamations"],["audit","📜 Journal"]];
   return pageHead("Administration générale", "Pilotage de la plateforme, validation des paiements et configuration commerciale.") + `<div class="wrap"><div class="dash"><aside class="side">${tabs.map(t => `<button data-act="atab" data-t="${t[0]}" class="${t[0] === adminTab ? "on" : ""}">${t[1]}</button>`).join("")}</aside><section id="abody"></section></div></div>`;
 };
 pages.admin.after = () => drawAdmin();
@@ -1002,7 +1048,10 @@ async function drawAdmin() {
   if (adminTab === "outbox") h += `<p class="notice info" style="margin-bottom:14px">Chaque inscription déclenche un e-mail et un message WhatsApp de bienvenue. L'envoi automatique nécessite la configuration du serveur (fichier <b>config.env</b> : SMTP_* pour l'e-mail, WA_* pour WhatsApp). À défaut, envoyez le message WhatsApp manuellement d'un clic.</p>` + ((L.outbox || []).length ? `<div class="tw"><table><tr><th>Date</th><th>Canal</th><th>Destinataire</th><th>Statut</th><th>Action</th></tr>${L.outbox.map(o => `<tr><td>${new Date(o.t).toLocaleString("fr-FR")}</td><td>${o.channel === "email" ? "✉️ E-mail" : "💬 WhatsApp"}</td><td>${esc(o.dest)}</td><td><span class="badge ${o.status === "sent" ? "ok" : o.status === "failed" ? "bad" : "warn"}" title="${esc(o.error || "")}">${o.status === "sent" ? "Envoyé" : o.status === "failed" ? "Échec" : "Non configuré"}</span></td><td>${o.channel === "whatsapp" && o.status !== "sent" ? `<a class="btn green sm" target="_blank" rel="noopener" href="https://wa.me/${esc(o.dest)}?text=${encodeURIComponent(o.body)}">Envoyer manuellement</a>` : ""}</td></tr>`).join("")}</table></div>` : emptyBox("📨", "Aucun message", "Les messages de bienvenue envoyés aux nouveaux inscrits apparaîtront ici."));
   if (adminTab === "msgs") h += (L.adminMsgs || []).length ? L.adminMsgs.map(m => `<div class="card" style="margin-bottom:10px"><span class="badge ${m.type === "claim" ? "warn" : m.type === "reset" ? "bad" : ""}">${m.type === "claim" ? "Réclamation" : m.type === "reset" ? "Mot de passe oublié" : "Message"}</span> <b>${esc(m.subject)}</b><p>${esc(m.body)}</p><div class="muted" style="font-size:.82rem">${esc(m.userName || "Inconnu")}${m.phone ? " • " + esc(m.phone) : ""} • ${fdate(m.t)}</div><button class="btn line sm" style="color:var(--blue);margin-top:8px" data-act="adminMsgClose" data-id="${esc(m.id)}">Marquer comme traité</button></div>`).join("") : emptyBox("✉️", "Aucun message en attente");
   if (adminTab === "audit") h += L.audit.length ? `<div class="tw"><table><tr><th>Date</th><th>Par</th><th>Opération</th></tr>${L.audit.map(a => `<tr><td>${new Date(a.t).toLocaleString("fr-FR")}</td><td>${esc(a.who)}</td><td class="wrapc">${esc(a.a)}</td></tr>`).join("")}</table></div>` : emptyBox("📜", "Journal vide");
+  if (adminTab === "proforma") h += adminProformaHtml();
+  if (adminTab === "subs") h += adminSubsHtml();
   b.innerHTML = h;
+  if (adminTab === "proforma") invTot();
 }
 
 /* ==========================================================================
@@ -1600,6 +1649,362 @@ document.addEventListener("submit", async e => {
   const scan = root => { if (!root.querySelectorAll) return; const list = root.matches && root.matches(SEL) ? [root, ...root.querySelectorAll(SEL)] : root.querySelectorAll(SEL); list.forEach(el => { if (!el.dataset.rv && !el.closest("#modal")) { el.dataset.rv = 1; el.classList.add("rv"); io.observe(el); } }); };
   new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && scan(n)))).observe($("#view"), { childList:true, subtree:true });
 })();
+
+/* ==========================================================================
+   AJOUT – FACTURES / DEVIS, JOURNAL DE CAISSE, PROFORMA ADMIN, ABONNEMENTS
+   (module indépendant : aucune fonction existante n'est modifiée)
+   ========================================================================== */
+const EXPIRY_ALERT_DAYS = 5;   // nombre de jours avant l'échéance pour prévenir la boutique
+const DOC_TYPES = { invoice:["FACTURE", "FAC", "Facture"], proforma:["FACTURE PROFORMA", "PRO", "Facture proforma"], quote:["DEVIS", "DEV", "Devis"] };
+const pad2 = n => String(n).padStart(2, "0");
+const ymd = t => { const d = new Date(t); return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; };
+const fday = t => new Date(t).toLocaleDateString("fr-FR", { day:"2-digit", month:"long", year:"numeric" });
+const num = v => Math.max(0, Math.round(Number(v) || 0));
+const cleanTxt = s => String(s ?? "").replace(/[\u202f\u00a0]/g, " ");
+const moneyP = n => cleanTxt(money(n));
+const daysLeft = t => Math.ceil((t - Date.now()) / DAY);
+const docsOf = kind => (S.local.docs || []).filter(d => d.kind === kind);
+const myShops = () => (S.local.shops || []).filter(s => S.user && s.userId === S.user.id);
+const findDoc = id => (S.local.docs || []).find(d => String(d.id) === String(id));
+const DZ_SELLER = () => ({ name:"DigiZORA – Nexus Solutions Group", city:"Brazzaville", phone:CONFIG.WHATSAPP_LABEL, email:"", logo:"/logo.png" });
+
+/* ---------- Stockage (serveur si connecté, sinon appareil) ---------- */
+async function storeDoc(kind, data, shopId, targetId) {
+  if (BACKEND) { const r = await api("/api/docs", { method:"POST", body:{ kind, data, shopId } }); (S.local.docs ||= []).unshift(r.doc); return r.doc; }
+  const d = { id:uid(), t:Date.now(), kind, ownerId:S.user.id, shopId:shopId || null, targetId:targetId || null, data };
+  (S.local.docs ||= []).unshift(d); saveLocal(); return d;
+}
+async function dropDoc(id) {
+  if (BACKEND) await api("/api/docs/" + encodeURIComponent(id), { method:"DELETE" });
+  S.local.docs = (S.local.docs || []).filter(d => d.id !== id); saveLocal();
+}
+function nextNumber(prefix) {
+  const y = new Date().getFullYear(), re = new RegExp("^" + prefix + "-" + y + "-(\\d+)$");
+  const max = (S.local.docs || []).reduce((m, d) => { const x = re.exec(d.data?.number || ""); return x ? Math.max(m, +x[1]) : m; }, 0);
+  return `${prefix}-${y}-${String(max + 1).padStart(4, "0")}`;
+}
+const sellerOfShop = s => { const u = S.user || {}; return { name:s.name, city:s.city || "", phone:s.wa ? "+" + String(s.wa).replace(/\D/g, "") : (u.phone || ""), email:u.email || "", logo:s.logo || "" }; };
+
+/* ---------- Modèle de document (partagé par l'aperçu, l'impression et le PDF) ---------- */
+function issuerOf(sel) { return { name:sel.name || "", logo:sel.logo || "/logo.png", lines:[[sel.city, "République du Congo"].filter(Boolean).join(", "), sel.phone ? "Tél / WhatsApp : " + sel.phone : "", sel.email ? "E-mail : " + sel.email : ""].filter(Boolean) }; }
+function normInvoice(d) {
+  const T = DOC_TYPES[d.type] || DOC_TYPES.invoice, lines = d.lines || [];
+  const sub = lines.reduce((a, l) => a + l.q * l.p, 0), dl = d.delivery || 0, di = d.discount || 0, total = Math.max(0, sub + dl - di);
+  return {
+    title:T[0], number:d.number, issuer:issuerOf(d.seller || {}),
+    party:{ label:d.type === "quote" ? "Devis établi pour" : "Facturé à", lines:[d.client?.name, d.client?.phone ? "Tél : " + d.client.phone : "", d.client?.address].filter(Boolean) },
+    meta:[["Date d'émission", fday(d.date)], [d.type === "invoice" ? "Échéance" : "Valable jusqu'au", fday(d.due)]],
+    cols:[{ h:"Désignation", w:.5 }, { h:"Qté", w:.1, a:"r" }, { h:"Prix unitaire", w:.2, a:"r" }, { h:"Montant", w:.2, a:"r" }],
+    rows:lines.map(l => [l.d, String(l.q), moneyP(l.p), moneyP(l.q * l.p)]),
+    totals:[["Sous-total", moneyP(sub)], dl ? ["Livraison", moneyP(dl)] : null, di ? ["Remise", "- " + moneyP(di)] : null, ["TOTAL À PAYER", moneyP(total), true]].filter(Boolean),
+    blocks:d.notes ? [{ h:"Notes et conditions", t:d.notes }] : [],
+    foot:d.type === "proforma" ? "Document proforma : il n'a pas valeur de facture définitive et ne constitue pas un justificatif de paiement." : d.type === "quote" ? "Devis valable jusqu'à la date indiquée, sous réserve de disponibilité des articles." : "",
+    total
+  };
+}
+function normJournal(d) {
+  const rows = (d.sales || []).map(x => [`${x.ref} – ${x.product}${x.name ? " (" + x.name + ")" : ""}`, String(x.qty), moneyP(x.total)]);
+  if (d.offTotal || d.offQty) rows.push(["Ventes en magasin (hors commandes en ligne)", String(d.offQty || 0), moneyP(d.offTotal || 0)]);
+  return {
+    title:"JOURNAL DE CAISSE", number:"Journée du " + fday(d.date), issuer:issuerOf(d.seller || {}), party:null, sign:true,
+    meta:[["Date", fday(d.date)], ["Établi par", d.by || "—"]],
+    kpis:[["Total des ventes", moneyP(d.total)], ["Articles vendus", String(d.qty)], ["Livraisons effectuées", String(d.deliveries)], ["Stock restant", d.stock + " produit(s)"]],
+    cols:[{ h:"Opération", w:.62 }, { h:"Qté", w:.1, a:"r" }, { h:"Montant", w:.28, a:"r" }], rows,
+    totals:[["Ventes en ligne livrées", moneyP(d.onlineTotal || 0)], ["Ventes en magasin", moneyP(d.offTotal || 0)], ["TOTAL DE LA JOURNÉE", moneyP(d.total), true]],
+    blocks:[{ h:"Observations et difficultés rencontrées", t:d.obs || "Aucune observation particulière." }], foot:""
+  };
+}
+const docModel = d => d.kind === "journal" ? normJournal(d.data) : normInvoice(d.data);
+const docFile = m => (slug(m.title + "-" + m.number) || "document") + ".pdf";
+
+/* ---------- Rendu HTML (aperçu + impression) ---------- */
+function docHtml(m) {
+  return `<div class="pd"><div class="pd-h"><img src="${esc(m.issuer.logo)}" alt="" onerror="this.onerror=null;this.src='/logo.png'"><div><b>${esc(m.issuer.name)}</b>${m.issuer.lines.map(l => `<span>${esc(l)}</span>`).join("")}</div></div>
+  <div class="pd-bar"></div><div class="pd-ti"><b>${esc(m.title)}</b><span>${esc(m.number)}</span></div>
+  <div class="pd-i">${m.party ? `<div class="pd-b"><small>${esc(m.party.label)}</small>${m.party.lines.map((l, i) => i ? `<span>${esc(l)}</span>` : `<b>${esc(l)}</b>`).join("")}</div>` : ""}<div class="pd-m">${m.meta.map(([k, v]) => `<div><small>${esc(k)}</small><b>${esc(v)}</b></div>`).join("")}</div></div>
+  ${m.kpis ? `<div class="pd-k">${m.kpis.map(([k, v]) => `<div><b>${esc(v)}</b><small>${esc(k)}</small></div>`).join("")}</div>` : ""}
+  <table class="pd-tb"><thead><tr>${m.cols.map(c => `<th class="${c.a === "r" ? "r" : ""}" style="width:${c.w * 100}%">${esc(c.h)}</th>`).join("")}</tr></thead><tbody>${m.rows.length ? m.rows.map(r => `<tr>${r.map((c, i) => `<td class="${m.cols[i].a === "r" ? "r" : ""}">${esc(c)}</td>`).join("")}</tr>`).join("") : `<tr><td colspan="${m.cols.length}" style="text-align:center;color:#5b6788">Aucune vente enregistrée.</td></tr>`}</tbody></table>
+  <div class="pd-to">${m.totals.map(([k, v, b]) => `<div class="${b ? "g" : ""}"><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join("")}</div>
+  ${m.blocks.map(b => `<div class="pd-bl"><h4>${esc(b.h)}</h4><p>${esc(b.t)}</p></div>`).join("")}
+  ${m.sign ? `<div class="pd-s"><div><span></span>Établi par</div><div><span></span>Visa du responsable</div></div>` : ""}
+  ${m.foot ? `<p class="pd-f">${esc(m.foot)}</p>` : ""}
+  <div class="pd-ft">DigiZORA – Le numérique sans frontières • Nexus Solutions Group, Brazzaville • WhatsApp ${esc(CONFIG.WHATSAPP_LABEL)}</div></div>`;
+}
+function printDoc(m) {
+  let z = $("#pdoc"); if (!z) { z = document.createElement("div"); z.id = "pdoc"; document.body.appendChild(z); }
+  z.innerHTML = docHtml(m); const done = () => { document.body.classList.remove("printing"); z.innerHTML = ""; window.removeEventListener("afterprint", done); };
+  window.addEventListener("afterprint", done);
+  Promise.all([...z.querySelectorAll("img")].map(i => i.complete ? 1 : new Promise(r => { i.onload = i.onerror = r; }))).then(() => { document.body.classList.add("printing"); setTimeout(() => window.print(), 80); });
+}
+
+/* ---------- Générateur PDF (sans bibliothèque externe, fonctionne hors ligne) ---------- */
+const PW = 595, PH = 842, PM = 40;
+const HW = [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584];
+const HB = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+const CP1252 = { "€":128, "‚":130, "„":132, "…":133, "‘":145, "’":146, "“":147, "”":148, "•":149, "–":150, "—":151, "™":153 };
+const C = { blue:[10,47,122], gold:[255,138,0], ink:[13,27,61], muted:[91,103,136], light:[244,247,255], line:[223,230,251], white:[255,255,255] };
+const rgbS = c => c.map(v => (v / 255).toFixed(3)).join(" ");
+function pdfEnc(s) {
+  let o = ""; for (const ch of cleanTxt(s)) { const c = ch.codePointAt(0); if (c < 127 && c >= 32) o += ch; else if (c >= 160 && c < 256) o += ch; else if (CP1252[ch]) o += String.fromCharCode(CP1252[ch]); }
+  return o.replace(/[\\()]/g, "\\$&");
+}
+class Pdf {
+  constructor() { this.pages = []; this.img = null; this.addPage(); }
+  addPage() { this.ops = []; this.pages.push(this.ops); this.y = PM; }
+  W(s, sz, b) { const t = b ? HB : HW; let w = 0; for (const ch of cleanTxt(s)) { let c = ch.codePointAt(0); if (c > 126) c = ch.normalize("NFD").charCodeAt(0); w += c >= 32 && c <= 126 ? t[c - 32] : 556; } return w * sz / 1000; }
+  wrap(s, sz, b, maxW) { const out = []; for (const para of String(s ?? "").split("\n")) { let line = ""; for (const w of para.split(/\s+/).filter(Boolean)) { const t = line ? line + " " + w : w; if (!line || this.W(t, sz, b) <= maxW) line = t; else { out.push(line); line = w; } } out.push(line); } return out; }
+  rect(x, y, w, h, c) { this.ops.push(`${rgbS(c)} rg ${x.toFixed(2)} ${(PH - y - h).toFixed(2)} ${w.toFixed(2)} ${h.toFixed(2)} re f`); }
+  line(x1, y1, x2, y2, c, lw = .6) { this.ops.push(`${lw} w ${rgbS(c)} RG ${x1.toFixed(2)} ${(PH - y1).toFixed(2)} m ${x2.toFixed(2)} ${(PH - y2).toFixed(2)} l S`); }
+  text(s, x, y, sz, b, c, al) { if (al === "r") x -= this.W(s, sz, b); else if (al === "c") x -= this.W(s, sz, b) / 2; this.ops.push(`BT /F${b ? 2 : 1} ${sz} Tf ${rgbS(c)} rg ${x.toFixed(2)} ${(PH - y).toFixed(2)} Td (${pdfEnc(s)}) Tj ET`); }
+  image(x, y, w, h) { this.ops.push(`q ${w.toFixed(2)} 0 0 ${h.toFixed(2)} ${x.toFixed(2)} ${(PH - y - h).toFixed(2)} cm /Im1 Do Q`); }
+  need(h) { if (this.y + h > PH - PM - 24) { this.addPage(); return true; } return false; }
+  blob() {
+    const chunks = [], xref = []; let off = 0; const w = x => { chunks.push(x); off += x.length; };
+    const obj = (id, body) => { xref[id] = off; w(`${id} 0 obj\n${body}\nendobj\n`); };
+    const n = this.pages.length, first = this.img ? 6 : 5, total = first + n * 2;
+    const foot = `DigiZORA – Le numérique sans frontières • Nexus Solutions Group, Brazzaville • WhatsApp ${CONFIG.WHATSAPP_LABEL}`;
+    this.pages.forEach((ops, i) => { this.ops = ops; this.line(PM, PH - PM + 4, PW - PM, PH - PM + 4, C.line); this.text(foot, PM, PH - PM + 16, 7.5, false, C.muted); this.text(`Page ${i + 1} / ${n}`, PW - PM, PH - PM + 16, 7.5, false, C.muted, "r"); });
+    w("%PDF-1.4\n"); obj(1, "<</Type/Catalog/Pages 2 0 R>>");
+    obj(2, `<</Type/Pages/Count ${n}/Kids[${this.pages.map((_, i) => `${first + i * 2} 0 R`).join(" ")}]>>`);
+    obj(3, "<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/WinAnsiEncoding>>"); obj(4, "<</Type/Font/Subtype/Type1/BaseFont/Helvetica-Bold/Encoding/WinAnsiEncoding>>");
+    if (this.img) { xref[5] = off; w(`5 0 obj\n<</Type/XObject/Subtype/Image/Width ${this.img.w}/Height ${this.img.h}/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length ${this.img.bytes.length}>>\nstream\n`); w(this.img.bytes); w("\nendstream\nendobj\n"); }
+    this.pages.forEach((ops, i) => {
+      const pid = first + i * 2, cid = pid + 1, data = ops.join("\n");
+      obj(pid, `<</Type/Page/Parent 2 0 R/MediaBox[0 0 ${PW} ${PH}]/Resources<</Font<</F1 3 0 R/F2 4 0 R>>${this.img ? "/XObject<</Im1 5 0 R>>" : ""}>>/Contents ${cid} 0 R>>`);
+      xref[cid] = off; w(`${cid} 0 obj\n<</Length ${data.length}>>\nstream\n${data}\nendstream\nendobj\n`);
+    });
+    const xo = off; w(`xref\n0 ${total}\n0000000000 65535 f \n` + Array.from({ length:total - 1 }, (_, i) => String(xref[i + 1]).padStart(10, "0") + " 00000 n \n").join("") + `trailer\n<</Size ${total}/Root 1 0 R>>\nstartxref\n${xo}\n%%EOF`);
+    const out = new Uint8Array(off); let p = 0; for (const c of chunks) { if (typeof c === "string") { for (let i = 0; i < c.length; i++) out[p++] = c.charCodeAt(i) & 255; } else { out.set(c, p); p += c.length; } }
+    return new Blob([out], { type:"application/pdf" });
+  }
+}
+const LOGOS = new Map();
+async function loadLogo(url) {
+  if (LOGOS.has(url)) return LOGOS.get(url);
+  let r = null;
+  try {
+    const im = new Image(); await new Promise((ok, ko) => { im.onload = ok; im.onerror = ko; im.src = url; });
+    const k = Math.min(1, 480 / Math.max(im.naturalWidth, im.naturalHeight)), w = Math.max(1, Math.round(im.naturalWidth * k)), h = Math.max(1, Math.round(im.naturalHeight * k));
+    const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); x.fillStyle = "#fff"; x.fillRect(0, 0, w, h); x.drawImage(im, 0, 0, w, h);
+    const b = await new Promise(res => c.toBlob(res, "image/jpeg", .88)); if (b) r = { bytes:new Uint8Array(await b.arrayBuffer()), w, h };
+  } catch { r = null; }
+  LOGOS.set(url, r); return r;
+}
+async function docPdf(m) {
+  const p = new Pdf(), CW = PW - 2 * PM; p.img = await loadLogo(m.issuer.logo) || (m.issuer.logo !== "/logo.png" ? await loadLogo("/logo.png") : null);
+  /* en-tête */
+  let y = PM, tx = PM;
+  if (p.img) { const hh = 52, ww = Math.min(130, p.img.w * hh / p.img.h), h2 = ww * p.img.h / p.img.w; p.image(PM, y, ww, h2); tx = PM + ww + 14; }
+  const nm = p.wrap(m.issuer.name, 15, true, PW - PM - tx); nm.slice(0, 2).forEach((l, i) => p.text(l, tx, y + 13 + i * 16, 15, true, C.blue));
+  m.issuer.lines.slice(0, 3).forEach((l, i) => p.text(l, tx, y + 13 + Math.min(nm.length, 2) * 16 + 2 + i * 12, 9, false, C.muted));
+  y += 66; p.rect(PM, y, CW, 2.5, C.gold); y += 10; p.rect(PM, y, CW, 28, C.blue);
+  p.text(m.title, PM + 12, y + 18, 13, true, C.white); p.text(m.number, PW - PM - 12, y + 18, 10, true, C.white, "r"); y += 28 + 14;
+  /* destinataire + informations */
+  const left = []; if (m.party) { left.push([m.party.label, "s"]); m.party.lines.forEach((l, i) => p.wrap(l, i ? 9.5 : 11, !i, CW * .5 - 24).forEach(x => left.push([x, i ? "n" : "b"]))); }
+  const right = []; m.meta.forEach(([k, v]) => { right.push([k, "s"]); right.push([v, "b"]); });
+  const rows = m.party ? [left, right] : [right];
+  const colW = m.party ? [CW * .52, CW * .44] : [CW];
+  const hh = Math.max(...rows.map(r => r.reduce((a, [, t]) => a + (t === "s" ? 12 : t === "b" ? 14 : 12.5), 0))) + 18;
+  let cx = PM; rows.forEach((r, ci) => { p.rect(cx, y, colW[ci], hh, C.light); p.rect(cx, y, 3, hh, C.gold); let yy = y + 14; r.forEach(([t, k]) => { if (k === "s") { p.text(t.toUpperCase(), cx + 12, yy, 7.5, true, C.muted); yy += 12; } else if (k === "b") { p.text(t, cx + 12, yy, 11, true, C.ink); yy += 14; } else { p.text(t, cx + 12, yy, 9.5, false, C.ink); yy += 12.5; } }); cx += colW[ci] + (CW * .04); });
+  y += hh + 14;
+  /* indicateurs (journal) */
+  if (m.kpis) { const kw = (CW - 3 * 8) / 4; m.kpis.forEach(([k, v], i) => { const x = PM + i * (kw + 8); p.rect(x, y, kw, 48, C.light); p.rect(x, y, kw, 3, C.gold); p.text(v, x + 10, y + 26, v.length > 14 ? 11 : 14, true, C.blue); p.text(k, x + 10, y + 40, 8, false, C.muted); }); y += 48 + 16; }
+  /* tableau */
+  p.y = y; const cw = m.cols.map(c => c.w * CW);
+  const head = () => { p.rect(PM, p.y, CW, 20, C.blue); let x = PM; m.cols.forEach((c, i) => { c.a === "r" ? p.text(c.h, x + cw[i] - 8, p.y + 13.5, 9, true, C.white, "r") : p.text(c.h, x + 8, p.y + 13.5, 9, true, C.white); x += cw[i]; }); p.y += 20; };
+  head();
+  if (!m.rows.length) { p.rect(PM, p.y, CW, 26, C.light); p.text("Aucune vente enregistrée.", PM + CW / 2, p.y + 17, 9.5, false, C.muted, "c"); p.y += 26; }
+  m.rows.forEach((r, ri) => {
+    const wr = p.wrap(r[0], 9.5, false, cw[0] - 16), rh = Math.max(24, wr.length * 12 + 12);
+    if (p.need(rh + 2)) head();
+    if (ri % 2 === 0) p.rect(PM, p.y, CW, rh, C.light);
+    wr.forEach((l, i) => p.text(l, PM + 8, p.y + 16 + i * 12, 9.5, false, C.ink));
+    let x = PM + cw[0]; for (let i = 1; i < r.length; i++) { p.text(r[i], x + cw[i] - 8, p.y + 16, 9.5, i === r.length - 1, C.ink, "r"); x += cw[i]; }
+    p.line(PM, p.y + rh, PM + CW, p.y + rh, C.line); p.y += rh;
+  });
+  /* totaux */
+  p.y += 12; const bx = PW - PM - 250;
+  m.totals.forEach(([k, v, b]) => { p.need(26); if (b) { p.rect(bx, p.y, 250, 26, C.blue); p.text(k, bx + 12, p.y + 17, 10, true, C.white); p.text(v, bx + 238, p.y + 17, 11, true, C.white, "r"); p.y += 26; } else { p.text(k, bx + 12, p.y + 13, 9.5, false, C.muted); p.text(v, bx + 238, p.y + 13, 9.5, true, C.ink, "r"); p.line(bx, p.y + 19, bx + 250, p.y + 19, C.line); p.y += 21; } });
+  /* blocs de texte */
+  m.blocks.forEach(b => { p.y += 16; p.need(40); p.text(b.h, PM, p.y + 10, 10.5, true, C.blue); p.y += 16; p.line(PM, p.y, PM + 40, p.y, C.gold, 1.5); p.y += 8; p.wrap(b.t, 9.5, false, CW).forEach(l => { p.need(14); p.text(l, PM, p.y + 10, 9.5, false, C.ink); p.y += 13; }); });
+  if (m.sign) { p.y += 26; p.need(70); p.y += 36; [[PM, "Établi par"], [PW - PM - 190, "Visa du responsable"]].forEach(([x, t]) => { p.line(x, p.y, x + 190, p.y, C.muted); p.text(t, x, p.y + 12, 8.5, false, C.muted); }); p.y += 20; }
+  if (m.foot) { p.y += 14; p.wrap(m.foot, 8.5, false, CW).forEach(l => { p.need(12); p.text(l, PM, p.y + 9, 8.5, false, C.muted); p.y += 11.5; }); }
+  return p.blob();
+}
+function saveBlob(blob, name) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000); }
+
+/* ---------- Visionneuse ---------- */
+function viewDoc(id) {
+  const d = findDoc(id); if (!d) return; const m = docModel(d), cli = d.kind === "invoice" || (d.kind === "adminpro" && S.user.role === "admin"), share = d.kind !== "journal";
+  openModal(`<div class="pdwrap"><div class="pdbar"><button class="btn blue sm" data-act="docPdf" data-id="${esc(id)}">⬇ PDF</button><button class="btn line sm" style="color:var(--blue)" data-act="docPrint" data-id="${esc(id)}">🖨 Imprimer</button>${cli ? `<button class="btn green sm" data-act="docWa" data-id="${esc(id)}">📲 WhatsApp</button>` : ""}${share ? `<button class="btn line sm" style="color:var(--blue)" data-act="docShare" data-id="${esc(id)}">📎 Envoyer le PDF</button>` : ""}</div>${docHtml(m)}</div>`);
+}
+function docWaText(d) {
+  const x = d.data, T = (DOC_TYPES[x.type] || DOC_TYPES.invoice)[2].toLowerCase(), m = normInvoice(x);
+  return `Bonjour ${x.client?.name || ""},\nVoici votre ${T} N° ${x.number} de ${x.seller?.name || "notre boutique"}.\n\n` + (x.lines || []).map(l => `• ${l.d} × ${l.q} : ${moneyP(l.q * l.p)}`).join("\n") + (x.delivery ? `\nLivraison : ${moneyP(x.delivery)}` : "") + (x.discount ? `\nRemise : - ${moneyP(x.discount)}` : "") + `\n\n*Total : ${moneyP(m.total)}*` + (x.type === "proforma" ? "\n(Facture proforma – sans valeur de facture définitive)" : "") + `\n\nLe document PDF vous est transmis en pièce jointe. Merci de votre confiance.`;
+}
+Object.assign(actions, {
+  docView(d) { viewDoc(d.id); },
+  async docPdf(d) { const x = findDoc(d.id); if (!x) return; try { const m = docModel(x); saveBlob(await docPdf(m), docFile(m)); toast("PDF téléchargé.", "ok"); } catch (e) { toast("Impossible de créer le PDF.", "bad"); } },
+  docPrint(d) { const x = findDoc(d.id); if (x) printDoc(docModel(x)); },
+  docWa(d) { const x = findDoc(d.id); if (!x) return; const ph = waDigits(x.data.client?.phone); window.open(`https://wa.me/${ph}?text=${encodeURIComponent(docWaText(x))}`, "_blank", "noopener"); toast("Message prêt. Joignez le PDF avec « Envoyer le PDF » ou téléchargez-le.", ""); },
+  async docShare(d) {
+    const x = findDoc(d.id); if (!x) return; const m = docModel(x);
+    try { const blob = await docPdf(m), file = new File([blob], docFile(m), { type:"application/pdf" });
+      if (navigator.canShare && navigator.canShare({ files:[file] })) await navigator.share({ files:[file], title:m.title + " " + m.number, text:docWaText(x) });
+      else { saveBlob(blob, docFile(m)); toast("PDF téléchargé : joignez-le dans la conversation WhatsApp.", "ok"); }
+    } catch (e) { if (e.name !== "AbortError") toast("Envoi impossible.", "bad"); }
+  },
+  async docDel(d) { if (!confirm("Supprimer ce document ?")) return; try { await dropDoc(d.id); closeModal(); if ($("#dbody")) drawDash(); if ($("#abody")) drawAdmin(); toast("Document supprimé.", "ok"); } catch (e) { toast(e.message, "bad"); } },
+  docAddLine() { const c = $("#invLines") || $("#apLines"); if (c) { c.insertAdjacentHTML("beforeend", lineRow()); invTot(); } },
+  docDelLine(d) { const r = event.target.closest(".invl"); const c = r && r.parentElement; if (c && c.children.length > 1) { r.remove(); invTot(); } }
+});
+
+/* ---------- Formulaire facture / proforma / devis ---------- */
+function lineRow(l = {}) {
+  return `<div class="invl" style="display:flex;gap:8px;align-items:flex-end;margin-bottom:6px;flex-wrap:wrap"><div class="f" style="flex:3 1 170px"><label>Désignation</label><input class="l-d" value="${esc(l.d || "")}" placeholder="Ex. Robe wax"></div><div class="f" style="flex:.7 1 70px"><label>Qté</label><input class="l-q" type="number" min="1" value="${l.q || 1}"></div><div class="f" style="flex:1.2 1 100px"><label>Prix unitaire</label><input class="l-p" type="number" min="0" value="${l.p ?? ""}"></div><button type="button" class="btn red sm" data-act="docDelLine" style="margin-bottom:12px" aria-label="Supprimer la ligne">🗑</button></div>`;
+}
+const readLines = f => $$(".invl", f).map(r => ({ d:r.querySelector(".l-d").value.trim(), q:Math.max(1, num(r.querySelector(".l-q").value)), p:num(r.querySelector(".l-p").value) })).filter(l => l.d);
+function invTot() {
+  const f = $("#invForm") || $("#apForm"), box = $("#invTot"); if (!f || !box) return;
+  const sub = readLines(f).reduce((a, l) => a + l.q * l.p, 0), dl = num(f.elements.delivery?.value), di = num(f.elements.discount?.value);
+  box.innerHTML = `<div style="display:flex;justify-content:space-between"><span>Sous-total</span><span>${money(sub)}</span></div>${dl ? `<div style="display:flex;justify-content:space-between"><span>Livraison</span><span>${money(dl)}</span></div>` : ""}${di ? `<div style="display:flex;justify-content:space-between"><span>Remise</span><span>- ${money(di)}</span></div>` : ""}<div class="tt"><span>Total</span><span>${money(Math.max(0, sub + dl - di))}</span></div>`;
+}
+const prodOpts = sid => `<option value="">+ Ajouter un produit de ma boutique…</option>` + ((S.local.items["prod_" + sid] || []).map(p => `<option value="${esc(p.id)}">${esc(p.title)} — ${money(p.price)}</option>`).join(""));
+actions.docNew = d => {
+  const shops = myShops(); if (!shops.length) return toast("Ouvrez d'abord une boutique pour créer des factures.", "bad");
+  const kind = DOC_TYPES[d.k] ? d.k : "invoice", sid = shops[0].id;
+  openModal(`<h2>🧾 Nouveau document</h2><form id="invForm" novalidate>
+    <div class="row"><div class="f"><label for="type">Type de document</label><select id="type" name="type">${Object.keys(DOC_TYPES).map(k => `<option value="${k}" ${k === kind ? "selected" : ""}>${DOC_TYPES[k][2]}</option>`).join("")}</select></div>
+    ${shops.length > 1 ? `<div class="f"><label for="invShop">Boutique</label><select id="invShop" name="shop">${shops.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("")}</select></div>` : `<input type="hidden" name="shop" id="invShop" value="${esc(sid)}">`}</div>
+    <div class="row">${field("cname", "Nom du client")}${field("cphone", "Téléphone / WhatsApp du client", "tel", 'placeholder="+242…"')}</div>
+    ${field("caddr", "Adresse du client (facultatif)")}
+    <div class="row">${field("date", "Date", "date", `value="${ymd(Date.now())}"`)}${field("dueDays", "Échéance / validité (jours)", "number", 'min="0" value="15"')}</div>
+    <h3 style="margin:6px 0">Articles</h3><div class="f"><select id="invProd">${prodOpts(sid)}</select></div>
+    <div id="invLines">${lineRow()}</div><button type="button" class="btn line sm" style="color:var(--blue);margin-bottom:10px" data-act="docAddLine">+ Ajouter une ligne</button>
+    <div class="row">${field("delivery", "Frais de livraison (FCFA)", "number", 'min="0" value="0"')}${field("discount", "Remise (FCFA)", "number", 'min="0" value="0"')}</div>
+    <div class="f"><label for="notes">Notes et conditions (facultatif)</label><textarea id="notes" name="notes" placeholder="Ex. Paiement Mobile Money à la livraison"></textarea></div>
+    <div class="totbox" id="invTot"></div><button class="btn gold" style="width:100%" type="submit">Créer le document</button></form>`);
+  invTot();
+};
+
+/* ---------- Journal de caisse ---------- */
+function jrCompute(shopId, date) {
+  const s = (S.local.shops || []).find(x => String(x.id) === String(shopId)) || {}, ord = (S.local.orders || []).filter(o => o.shop === s.name && ymd(o.t) === date);
+  const sales = ord.filter(o => o.status === "delivered");
+  return { sales:sales.map(o => ({ ref:o.ref, product:o.product, qty:o.qty, total:o.total, name:o.name })), onlineTotal:sales.reduce((a, o) => a + o.total, 0), onlineQty:sales.reduce((a, o) => a + o.qty, 0), deliveries:sales.length, pending:ord.filter(o => ["new", "confirmed", "shipped"].includes(o.status)).length, stock:(S.local.items["prod_" + shopId] || []).filter(p => !p.sold).length };
+}
+function jrFill() {
+  const f = $("#jrForm"); if (!f) return; const c = jrCompute(f.elements.shop.value, f.elements.date.value);
+  f.elements.onlineTotal.value = c.onlineTotal; f.elements.onlineQty.value = c.onlineQty; f.elements.deliveries.value = c.deliveries; f.elements.stock.value = c.stock;
+  $("#jrHint").textContent = c.pending > 0 ? `ℹ️ ${c.pending} commande(s) du jour ne sont pas encore livrées : elles ne sont pas comptées.` : "Chiffres calculés d'après vos commandes livrées ce jour (modifiables).";
+  jrTot();
+}
+function jrTot() { const f = $("#jrForm"); if (!f) return; const e = f.elements; $("#jrTot").innerHTML = `<div style="display:flex;justify-content:space-between"><span>Articles vendus</span><span>${num(e.onlineQty.value) + num(e.offQty.value)}</span></div><div class="tt"><span>Total des ventes</span><span>${money(num(e.onlineTotal.value) + num(e.offTotal.value))}</span></div>`; }
+actions.jrNew = () => {
+  const shops = myShops(); if (!shops.length) return toast("Ouvrez d'abord une boutique.", "bad");
+  openModal(`<h2>📒 Journal de caisse</h2><form id="jrForm" novalidate>
+    <div class="row">${shops.length > 1 ? `<div class="f"><label for="jrShop">Boutique</label><select id="jrShop" name="shop">${shops.map(s => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join("")}</select></div>` : `<input type="hidden" id="jrShop" name="shop" value="${esc(shops[0].id)}">`}${field("date", "Date de la journée", "date", `value="${ymd(Date.now())}" max="${ymd(Date.now())}"`)}</div>
+    <p class="muted" id="jrHint" style="font-size:.85rem;margin-bottom:8px"></p>
+    <div class="row">${field("onlineTotal", "Ventes en ligne livrées (FCFA)", "number", 'min="0"')}${field("onlineQty", "Articles vendus en ligne", "number", 'min="0"')}</div>
+    <div class="row">${field("offTotal", "Ventes en magasin (FCFA)", "number", 'min="0" value="0"')}${field("offQty", "Articles vendus en magasin", "number", 'min="0" value="0"')}</div>
+    <div class="row">${field("deliveries", "Livraisons effectuées", "number", 'min="0"')}${field("stock", "Stock restant (produits disponibles)", "number", 'min="0"')}</div>
+    <div class="f"><label for="obs">Observations / difficultés rencontrées</label><textarea id="obs" name="obs" placeholder="Ex. Retard de livraison à Pointe-Noire, rupture de stock sur…"></textarea></div>
+    ${field("by", "Établi par", "text", `value="${esc(S.user.name || "")}"`)}
+    <div class="totbox" id="jrTot"></div><button class="btn gold" style="width:100%" type="submit">Enregistrer le journal</button></form>`);
+  jrFill();
+};
+
+/* ---------- Onglets du tableau de bord boutique ---------- */
+const docRow = (d, who) => { const x = d.data, T = (DOC_TYPES[x.type] || DOC_TYPES.invoice)[2], tot = normInvoice(x).total; return `<tr><td><b>${esc(x.number)}</b></td><td><span class="badge ${x.type === "invoice" ? "ok" : x.type === "proforma" ? "warn" : ""}">${T}</span></td><td>${esc(who)}</td><td>${fdate(x.date)}</td><td><b>${money(tot)}</b></td><td style="white-space:nowrap"><button class="btn blue sm" data-act="docView" data-id="${esc(d.id)}">Ouvrir</button> <button class="btn line sm" style="color:var(--blue)" data-act="docPdf" data-id="${esc(d.id)}">PDF</button> <button class="btn line sm" style="color:var(--blue)" data-act="docPrint" data-id="${esc(d.id)}">🖨</button> ${(d.kind === "invoice" || (d.kind === "adminpro" && S.user.role === "admin")) ? `<button class="btn green sm" data-act="docWa" data-id="${esc(d.id)}">📲</button> ` : ""}${d.ownerId === S.user.id ? `<button class="btn red sm" data-act="docDel" data-id="${esc(d.id)}">🗑</button>` : ""}</td></tr>`; };
+function docsTabHtml(u, L) {
+  const mine = docsOf("invoice").filter(d => d.ownerId === u.id), recv = docsOf("adminpro").filter(d => d.targetId === u.id);
+  let h = `<h2 class="t" style="margin-top:0">Factures et devis</h2><div class="row" style="margin-bottom:14px"><button class="btn gold sm" data-act="docNew" data-k="invoice">+ Facture</button><button class="btn blue sm" data-act="docNew" data-k="proforma">+ Facture proforma</button><button class="btn line sm" style="color:var(--blue)" data-act="docNew" data-k="quote">+ Devis</button></div>`;
+  h += mine.length ? `<div class="tw"><table><tr><th>N°</th><th>Type</th><th>Client</th><th>Date</th><th>Total</th><th>Actions</th></tr>${mine.map(d => docRow(d, d.data.client?.name || "—")).join("")}</table></div>` : emptyBox("🧾", "Aucun document", "Créez une facture, une proforma ou un devis, puis téléchargez-le en PDF, imprimez-le ou envoyez-le au client par WhatsApp.");
+  if (recv.length) h += `<h2 class="t">Factures proforma reçues de DigiZORA</h2><div class="tw"><table><tr><th>N°</th><th>Type</th><th>Émetteur</th><th>Date</th><th>Total</th><th>Actions</th></tr>${recv.map(d => docRow(d, "DigiZORA")).join("")}</table></div><p class="muted" style="margin-top:8px;font-size:.85rem">Pour régler, rendez-vous sur <a href="#/boutiques"><u>Boutiques</u></a> puis envoyez la preuve de paiement.</p>`;
+  return h;
+}
+function journalTabHtml(u, L) {
+  const J = docsOf("journal").filter(d => d.ownerId === u.id);
+  return `<h2 class="t" style="margin-top:0">Journal de caisse</h2><div class="row" style="margin-bottom:14px"><button class="btn gold sm" data-act="jrNew">+ Clôturer / créer le journal du jour</button></div>` + (J.length ? `<div class="tw"><table><tr><th>Date</th><th>Boutique</th><th>Ventes</th><th>Articles</th><th>Livraisons</th><th>Stock</th><th>Actions</th></tr>${J.map(d => { const x = d.data; return `<tr><td>${fdate(x.date)}</td><td>${esc(x.seller?.name || "")}</td><td><b>${money(x.total)}</b></td><td>${x.qty}</td><td>${x.deliveries}</td><td>${x.stock}</td><td style="white-space:nowrap"><button class="btn blue sm" data-act="docView" data-id="${esc(d.id)}">Ouvrir</button> <button class="btn line sm" style="color:var(--blue)" data-act="docPdf" data-id="${esc(d.id)}">PDF</button> <button class="btn line sm" style="color:var(--blue)" data-act="docPrint" data-id="${esc(d.id)}">🖨</button> <button class="btn red sm" data-act="docDel" data-id="${esc(d.id)}">🗑</button></td></tr>`; }).join("")}</table></div>` : emptyBox("📒", "Aucun journal", "À la fin de la journée, créez votre synthèse : ventes, articles vendus, livraisons, stock restant et observations."));
+}
+
+/* ---------- Alerte d'expiration d'abonnement ---------- */
+function expiryBanner() {
+  const u = S.user; if (!u || u.role === "admin") return "";
+  return myShops().filter(s => s.expires && s.status !== "suspended" && daysLeft(s.expires) <= EXPIRY_ALERT_DAYS).map(s => {
+    const gone = s.expires <= Date.now(), dl = daysLeft(s.expires);
+    const when = gone ? `a expiré le ${fdate(s.expires)}` : dl <= 1 ? `expire dans moins de 24 h (le ${fdate(s.expires)})` : `expire dans ${dl} jours (le ${fdate(s.expires)})`;
+    return `<p class="notice ${gone ? "bad" : ""}" style="margin-bottom:14px">${gone ? "⛔" : "⏰"} Votre abonnement <b>${esc(s.plan || "")}</b> de la boutique « ${esc(s.name)} » ${when}. ${gone ? "Votre boutique n'est plus visible : " : "Pour éviter toute interruption, "}<a href="#/boutiques"><u>renouvelez-le dès maintenant</u></a>.</p>`;
+  }).join("");
+}
+
+/* ---------- Espace administrateur : proforma et abonnements ---------- */
+let apPre = null;
+const durPrice = (plan, dur) => Math.round(plan.price * dur.months * (1 - dur.discount / 100));
+const ownerOf = s => (S.local.users || []).find(x => x.id === s.userId) || {};
+function adminProformaHtml() {
+  const L = S.local, st = settings(), shops = L.shops || [], pre = apPre || {}; apPre = null;
+  if (!shops.length) return emptyBox("🧾", "Aucune boutique", "Les boutiques apparaîtront ici dès leur création.");
+  const sh = shops.find(s => String(s.id) === String(pre.shop)) || shops[0], pl = st.plans.find(p => p.name === sh.plan) || st.plans[0], dur = st.durations[0];
+  const docs = docsOf("adminpro");
+  return `<form id="apForm" class="card" novalidate><h3>Nouvelle facture proforma pour une boutique</h3>
+    <div class="row" style="margin-top:10px"><div class="f"><label for="apShop">Boutique</label><select id="apShop" name="shop">${shops.map(s => `<option value="${esc(s.id)}" ${s.id === sh.id ? "selected" : ""}>${esc(s.name)}${ownerOf(s).name ? " — " + esc(ownerOf(s).name) : ""}</option>`).join("")}</select></div>
+    <div class="f"><label for="apPlan">Formule</label><select id="apPlan">${st.plans.map(p => `<option value="${esc(p.id)}" ${p.id === pl.id ? "selected" : ""}>${esc(p.name)} — ${money(p.price)}/mois</option>`).join("")}</select></div>
+    <div class="f"><label for="apDur">Durée</label><select id="apDur">${st.durations.map(d => `<option value="${esc(d.id)}">${esc(d.label)} (${d.months} mois${d.discount ? ", -" + d.discount + "%" : ""})</option>`).join("")}</select></div></div>
+    <div class="row">${field("date", "Date", "date", `value="${ymd(Date.now())}"`)}${field("dueDays", "Validité (jours)", "number", 'min="1" value="7"')}</div>
+    <div id="apLines">${lineRow({ d:`Abonnement ${pl.name} – ${dur.label} (${dur.months} mois)`, q:1, p:durPrice(pl, dur) })}</div><button type="button" class="btn line sm" style="color:var(--blue);margin-bottom:10px" data-act="docAddLine">+ Ajouter une ligne</button>
+    <div class="row">${field("delivery", "Frais annexes (FCFA)", "number", 'min="0" value="0"')}${field("discount", "Remise (FCFA)", "number", 'min="0" value="0"')}</div>
+    <div class="f"><label for="apNotes">Notes et modalités de paiement</label><textarea id="apNotes" name="notes">Après règlement, envoyez la preuve de paiement depuis votre espace (rubrique Paiements) ou par WhatsApp au ${esc(CONFIG.WHATSAPP_LABEL)}. Votre abonnement est activé après validation du paiement.</textarea></div>
+    <div class="totbox" id="invTot"></div><button class="btn blue" type="submit">Générer et envoyer à la boutique</button></form>
+    <h2 class="t">Proforma émises</h2>` + (docs.length ? `<div class="tw"><table><tr><th>N°</th><th>Type</th><th>Boutique</th><th>Date</th><th>Total</th><th>Actions</th></tr>${docs.map(d => { const s = shops.find(x => String(x.id) === String(d.shopId)) || {}; return docRow(d, s.name || d.data.client?.name || "—"); }).join("")}</table></div>` : emptyBox("🧾", "Aucune proforma émise", "La boutique reçoit la facture dans son espace « Factures » avec une notification."));
+}
+function adminSubsHtml() {
+  const L = S.local, shops = [...(L.shops || [])].sort((a, b) => a.expires - b.expires), now = Date.now();
+  const gone = shops.filter(s => s.expires <= now).length, soon = shops.filter(s => s.expires > now && daysLeft(s.expires) <= EXPIRY_ALERT_DAYS).length;
+  return `<div class="grid g4" style="margin-bottom:14px"><div class="kpi"><b>${shops.length}</b><span>Boutiques</span></div><div class="kpi"><b>${shops.length - gone}</b><span>Abonnements en cours</span></div><div class="kpi"><b>${soon}</b><span>Expirent sous ${EXPIRY_ALERT_DAYS} jours</span></div><div class="kpi"><b>${gone}</b><span>Expirés</span></div></div>` + (shops.length ? `<div class="tw"><table><tr><th>Boutique</th><th>Propriétaire</th><th>Formule</th><th>Échéance</th><th>Reste</th><th>Actions</th></tr>${shops.map(s => {
+    const o = ownerOf(s), dl = daysLeft(s.expires), g = s.expires <= now, near = !g && dl <= EXPIRY_ALERT_DAYS, ph = waDigits(o.phone || (s.wa ? "+" + s.wa : ""));
+    const msg = g ? `Bonjour, votre abonnement DigiZORA « ${s.plan} » pour la boutique « ${s.name} » a expiré le ${fday(s.expires)}. Renouvelez-le pour réactiver votre boutique.` : `Bonjour, votre abonnement DigiZORA « ${s.plan} » pour la boutique « ${s.name} » expire le ${fday(s.expires)}. Pensez à le renouveler pour éviter toute interruption.`;
+    return `<tr><td><b>${esc(s.name)}</b></td><td>${esc(o.name || "—")}${o.phone ? `<div class="muted" style="font-size:.75rem">${esc(o.phone)}</div>` : ""}</td><td>${esc(s.plan || "")}</td><td>${fdate(s.expires)}</td><td><span class="badge ${g ? "bad" : near ? "warn" : "ok"}">${g ? "Expiré" : dl + " j"}</span></td><td style="white-space:nowrap"><button class="btn blue sm" data-act="apFor" data-shop="${esc(s.id)}">🧾 Proforma</button> <a class="btn green sm" target="_blank" rel="noopener" href="https://wa.me/${ph}?text=${encodeURIComponent(msg)}">📲 Rappel</a></td></tr>`;
+  }).join("")}</table></div>` : emptyBox("📅", "Aucun abonnement"));
+}
+Object.assign(actions, {
+  apFor(d) { apPre = { shop:d.shop }; adminTab = "proforma"; $$(".side button").forEach(b => b.classList.toggle("on", b.dataset.t === "proforma")); drawAdmin(); }
+});
+
+/* ---------- Soumissions et champs dynamiques ---------- */
+document.addEventListener("submit", async e => {
+  const f = e.target, v = id => (f.elements[id]?.value || "").trim();
+  if (f.id === "invForm") {
+    const shop = myShops().find(s => String(s.id) === v("shop")), lines = readLines(f); if (!shop) return toast("Boutique introuvable.", "bad");
+    if (v("cname").length < 2) return toast("Indiquez le nom du client.", "bad"); if (!lines.length) return toast("Ajoutez au moins un article.", "bad");
+    const type = DOC_TYPES[v("type")] ? v("type") : "invoice", date = v("date") ? new Date(v("date") + "T12:00:00").getTime() : Date.now();
+    const data = { type, number:nextNumber(DOC_TYPES[type][1]), date, due:date + num(v("dueDays")) * DAY, client:{ name:v("cname"), phone:v("cphone"), address:v("caddr") }, lines, delivery:num(v("delivery")), discount:num(v("discount")), notes:v("notes"), seller:sellerOfShop(shop) };
+    data.total = normInvoice(data).total;
+    try { const d = await storeDoc("invoice", data, shop.id); closeModal(); if ($("#dbody")) drawDash(); toast("Document créé.", "ok"); viewDoc(d.id); } catch (er) { toast(er.message, "bad"); }
+  }
+  if (f.id === "jrForm") {
+    const shop = myShops().find(s => String(s.id) === v("shop")); if (!shop) return toast("Boutique introuvable.", "bad"); if (!v("date")) return toast("Indiquez la date.", "bad");
+    const c = jrCompute(shop.id, v("date")), on = num(v("onlineTotal")), oq = num(v("onlineQty")), ft = num(v("offTotal")), fq = num(v("offQty"));
+    const data = { date:new Date(v("date") + "T12:00:00").getTime(), seller:sellerOfShop(shop), sales:c.sales, onlineTotal:on, onlineQty:oq, offTotal:ft, offQty:fq, total:on + ft, qty:oq + fq, deliveries:num(v("deliveries")), stock:num(v("stock")), obs:v("obs"), by:v("by") };
+    try { const d = await storeDoc("journal", data, shop.id); closeModal(); if ($("#dbody")) drawDash(); toast("Journal enregistré.", "ok"); viewDoc(d.id); } catch (er) { toast(er.message, "bad"); }
+  }
+  if (f.id === "apForm") {
+    const shop = (S.local.shops || []).find(s => String(s.id) === v("shop")), lines = readLines(f); if (!shop) return toast("Choisissez une boutique.", "bad"); if (!lines.length) return toast("Ajoutez au moins une ligne.", "bad");
+    const o = ownerOf(shop), date = v("date") ? new Date(v("date") + "T12:00:00").getTime() : Date.now();
+    const data = { type:"proforma", number:nextNumber("PRO"), date, due:date + Math.max(1, num(v("dueDays"))) * DAY, client:{ name:shop.name, phone:o.phone || (shop.wa ? "+" + shop.wa : ""), address:[o.name, shop.city].filter(Boolean).join(" – ") }, lines, delivery:num(v("delivery")), discount:num(v("discount")), notes:v("notes"), seller:DZ_SELLER() };
+    data.total = normInvoice(data).total;
+    try { const d = await storeDoc("adminpro", data, shop.id, shop.userId); drawAdmin(); toast("Proforma envoyée à la boutique.", "ok"); viewDoc(d.id); } catch (er) { toast(er.message, "bad"); }
+  }
+});
+document.addEventListener("input", e => { if (e.target.closest && e.target.closest("#invForm, #apForm")) invTot(); if (e.target.closest && e.target.closest("#jrForm")) jrTot(); });
+document.addEventListener("change", e => {
+  const t = e.target; if (!t.closest) return;
+  if (t.id === "invProd") { const f = $("#invForm"), p = (S.local.items["prod_" + f.elements.shop.value] || []).find(x => String(x.id) === t.value); if (p) { const c = $("#invLines"), last = c.lastElementChild; if (last && !last.querySelector(".l-d").value.trim()) last.remove(); c.insertAdjacentHTML("beforeend", lineRow({ d:p.title, q:1, p:p.price })); invTot(); } t.value = ""; }
+  if (t.id === "invShop" && t.tagName === "SELECT") $("#invProd").innerHTML = prodOpts(t.value);
+  if (t.id === "jrShop" || (t.name === "date" && t.closest("#jrForm"))) jrFill();
+  if (t.id === "apPlan" || t.id === "apDur") { const st = settings(), pl = st.plans.find(p => p.id === $("#apPlan").value), dur = st.durations.find(x => x.id === $("#apDur").value), r = $("#apLines .invl"); if (pl && dur && r) { r.querySelector(".l-d").value = `Abonnement ${pl.name} – ${dur.label} (${dur.months} mois)`; r.querySelector(".l-q").value = 1; r.querySelector(".l-p").value = durPrice(pl, dur); invTot(); } }
+  if (t.id === "apShop") { const s = (S.local.shops || []).find(x => String(x.id) === t.value), st = settings(), pl = s && st.plans.find(p => p.name === s.plan); if (pl) { $("#apPlan").value = pl.id; $("#apPlan").dispatchEvent(new Event("change", { bubbles:true })); } }
+});
 
 /* ==========================================================================
    11. DÉMARRAGE
